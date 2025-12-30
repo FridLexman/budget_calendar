@@ -4,16 +4,16 @@ Flutter app to plan and track bills and income on a calendar, with a dashboard t
 
 ## Features
 - Calendar with markers for upcoming and paid bills; tap any day to add or review items.
-- Recurring bill templates (monthly, weekly, biweekly, semi‑monthly, yearly, last day/business day) that auto-generate each month.
+- Recurring bill templates (monthly, weekly, biweekly, semi-monthly, yearly, last day/business day) that auto-generate each month.
 - Income tracking with expected vs. received amounts and simple source management.
 - Dashboard summaries: projected/actual money left, next 7 days due, category breakdowns.
-- Local encrypted SQLite via Drift + SQLCipher; key stored in secure storage and local_auth ready for device lock.
+- Local SQLite via Drift; secure storage is ready for future encryption support and local_auth for device lock.
 - Riverpod state management and TableCalendar UI.
 
 ## Stack
 - Flutter (Material 3)
 - Riverpod
-- Drift + SQLCipher (encrypted SQLite)
+- Drift + sqlite3_flutter_libs
 - TableCalendar
 - local_auth, flutter_secure_storage, intl
 
@@ -36,7 +36,20 @@ Flutter app to plan and track bills and income on a calendar, with a dashboard t
 - Lint: `flutter analyze`
 - Tests: `flutter test`
 - Schema changes: update `lib/db/app_database.dart` then rerun the build_runner command above.
-- The app seeds common categories on first run; data is stored locally in `budget_calendar.db` (SQLCipher-encrypted).
+- The app seeds common categories on first run; data is stored locally in `budget_calendar.db`.
+
+## Building releases
+- Android APK (release):
+  ```bash
+  flutter build apk --release
+  ```
+  Output: `build/app/outputs/flutter-apk/app-release.apk`. Requires Android SDK/Android Studio installed.
+
+- Windows (.exe) (release):
+  ```bash
+  flutter build windows --release
+  ```
+  Output: `build/windows/x64/runner/Release/budget_calendar.exe`. Requires Windows Developer Mode for symlinks and Visual Studio with the “Desktop development with C++” workload.
 
 ## Project layout
 - `lib/main.dart` – app bootstrap and theming.
