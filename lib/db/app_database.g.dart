@@ -35,6 +35,12 @@ class $BillTemplatesTable extends BillTemplates
   late final GeneratedColumn<int> defaultAmountCents = GeneratedColumn<int>(
       'default_amount_cents', aliasedName, false,
       type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _startDateMeta =
+      const VerificationMeta('startDate');
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+      'start_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _activeMeta = const VerificationMeta('active');
   @override
   late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
@@ -64,6 +70,7 @@ class $BillTemplatesTable extends BillTemplates
         name,
         category,
         defaultAmountCents,
+        startDate,
         active,
         recurrenceRule,
         createdAt
@@ -99,6 +106,10 @@ class $BillTemplatesTable extends BillTemplates
     } else if (isInserting) {
       context.missing(_defaultAmountCentsMeta);
     }
+    if (data.containsKey('start_date')) {
+      context.handle(_startDateMeta,
+          startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
+    }
     if (data.containsKey('active')) {
       context.handle(_activeMeta,
           active.isAcceptableOrUnknown(data['active']!, _activeMeta));
@@ -130,6 +141,8 @@ class $BillTemplatesTable extends BillTemplates
           .read(DriftSqlType.string, data['${effectivePrefix}category']),
       defaultAmountCents: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}default_amount_cents'])!,
+      startDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_date']),
       active: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}active'])!,
       recurrenceRule: attachedDatabase.typeMapping
@@ -150,6 +163,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   final String name;
   final String? category;
   final int defaultAmountCents;
+  final String? startDate;
   final bool active;
 
   /// JSON string, e.g. {"type":"monthly","day":1}
@@ -160,6 +174,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       required this.name,
       this.category,
       required this.defaultAmountCents,
+      this.startDate,
       required this.active,
       this.recurrenceRule,
       required this.createdAt});
@@ -172,6 +187,9 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       map['category'] = Variable<String>(category);
     }
     map['default_amount_cents'] = Variable<int>(defaultAmountCents);
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
     map['active'] = Variable<bool>(active);
     if (!nullToAbsent || recurrenceRule != null) {
       map['recurrence_rule'] = Variable<String>(recurrenceRule);
@@ -188,6 +206,9 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           ? const Value.absent()
           : Value(category),
       defaultAmountCents: Value(defaultAmountCents),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
       active: Value(active),
       recurrenceRule: recurrenceRule == null && nullToAbsent
           ? const Value.absent()
@@ -204,6 +225,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       name: serializer.fromJson<String>(json['name']),
       category: serializer.fromJson<String?>(json['category']),
       defaultAmountCents: serializer.fromJson<int>(json['defaultAmountCents']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
       active: serializer.fromJson<bool>(json['active']),
       recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -217,6 +239,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       'name': serializer.toJson<String>(name),
       'category': serializer.toJson<String?>(category),
       'defaultAmountCents': serializer.toJson<int>(defaultAmountCents),
+      'startDate': serializer.toJson<String?>(startDate),
       'active': serializer.toJson<bool>(active),
       'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -228,6 +251,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           String? name,
           Value<String?> category = const Value.absent(),
           int? defaultAmountCents,
+          Value<String?> startDate = const Value.absent(),
           bool? active,
           Value<String?> recurrenceRule = const Value.absent(),
           DateTime? createdAt}) =>
@@ -236,6 +260,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
         name: name ?? this.name,
         category: category.present ? category.value : this.category,
         defaultAmountCents: defaultAmountCents ?? this.defaultAmountCents,
+        startDate: startDate.present ? startDate.value : this.startDate,
         active: active ?? this.active,
         recurrenceRule:
             recurrenceRule.present ? recurrenceRule.value : this.recurrenceRule,
@@ -249,6 +274,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       defaultAmountCents: data.defaultAmountCents.present
           ? data.defaultAmountCents.value
           : this.defaultAmountCents,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
       active: data.active.present ? data.active.value : this.active,
       recurrenceRule: data.recurrenceRule.present
           ? data.recurrenceRule.value
@@ -264,6 +290,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           ..write('name: $name, ')
           ..write('category: $category, ')
           ..write('defaultAmountCents: $defaultAmountCents, ')
+          ..write('startDate: $startDate, ')
           ..write('active: $active, ')
           ..write('recurrenceRule: $recurrenceRule, ')
           ..write('createdAt: $createdAt')
@@ -273,7 +300,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
 
   @override
   int get hashCode => Object.hash(id, name, category, defaultAmountCents,
-      active, recurrenceRule, createdAt);
+      startDate, active, recurrenceRule, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -282,6 +309,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           other.name == this.name &&
           other.category == this.category &&
           other.defaultAmountCents == this.defaultAmountCents &&
+          other.startDate == this.startDate &&
           other.active == this.active &&
           other.recurrenceRule == this.recurrenceRule &&
           other.createdAt == this.createdAt);
@@ -292,6 +320,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   final Value<String> name;
   final Value<String?> category;
   final Value<int> defaultAmountCents;
+  final Value<String?> startDate;
   final Value<bool> active;
   final Value<String?> recurrenceRule;
   final Value<DateTime> createdAt;
@@ -300,6 +329,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     this.name = const Value.absent(),
     this.category = const Value.absent(),
     this.defaultAmountCents = const Value.absent(),
+    this.startDate = const Value.absent(),
     this.active = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -309,6 +339,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     required String name,
     this.category = const Value.absent(),
     required int defaultAmountCents,
+    this.startDate = const Value.absent(),
     this.active = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -319,6 +350,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     Expression<String>? name,
     Expression<String>? category,
     Expression<int>? defaultAmountCents,
+    Expression<String>? startDate,
     Expression<bool>? active,
     Expression<String>? recurrenceRule,
     Expression<DateTime>? createdAt,
@@ -329,6 +361,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
       if (category != null) 'category': category,
       if (defaultAmountCents != null)
         'default_amount_cents': defaultAmountCents,
+      if (startDate != null) 'start_date': startDate,
       if (active != null) 'active': active,
       if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
       if (createdAt != null) 'created_at': createdAt,
@@ -340,6 +373,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
       Value<String>? name,
       Value<String?>? category,
       Value<int>? defaultAmountCents,
+      Value<String?>? startDate,
       Value<bool>? active,
       Value<String?>? recurrenceRule,
       Value<DateTime>? createdAt}) {
@@ -348,6 +382,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
       name: name ?? this.name,
       category: category ?? this.category,
       defaultAmountCents: defaultAmountCents ?? this.defaultAmountCents,
+      startDate: startDate ?? this.startDate,
       active: active ?? this.active,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
       createdAt: createdAt ?? this.createdAt,
@@ -369,6 +404,9 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     if (defaultAmountCents.present) {
       map['default_amount_cents'] = Variable<int>(defaultAmountCents.value);
     }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
     if (active.present) {
       map['active'] = Variable<bool>(active.value);
     }
@@ -388,6 +426,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
           ..write('name: $name, ')
           ..write('category: $category, ')
           ..write('defaultAmountCents: $defaultAmountCents, ')
+          ..write('startDate: $startDate, ')
           ..write('active: $active, ')
           ..write('recurrenceRule: $recurrenceRule, ')
           ..write('createdAt: $createdAt')
@@ -975,6 +1014,12 @@ class $IncomeSourcesTable extends IncomeSources
   late final GeneratedColumn<String> frequency = GeneratedColumn<String>(
       'frequency', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _startDateMeta =
+      const VerificationMeta('startDate');
+  @override
+  late final GeneratedColumn<String> startDate = GeneratedColumn<String>(
+      'start_date', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _anchorDateMeta =
       const VerificationMeta('anchorDate');
   @override
@@ -999,8 +1044,16 @@ class $IncomeSourcesTable extends IncomeSources
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, name, amountCents, frequency, anchorDate, active, createdAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        amountCents,
+        frequency,
+        startDate,
+        anchorDate,
+        active,
+        createdAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1034,6 +1087,10 @@ class $IncomeSourcesTable extends IncomeSources
     } else if (isInserting) {
       context.missing(_frequencyMeta);
     }
+    if (data.containsKey('start_date')) {
+      context.handle(_startDateMeta,
+          startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta));
+    }
     if (data.containsKey('anchor_date')) {
       context.handle(
           _anchorDateMeta,
@@ -1065,6 +1122,8 @@ class $IncomeSourcesTable extends IncomeSources
           .read(DriftSqlType.int, data['${effectivePrefix}amount_cents'])!,
       frequency: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}frequency'])!,
+      startDate: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}start_date']),
       anchorDate: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}anchor_date']),
       active: attachedDatabase.typeMapping
@@ -1085,6 +1144,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   final String name;
   final int amountCents;
   final String frequency;
+  final String? startDate;
   final String? anchorDate;
   final bool active;
   final DateTime createdAt;
@@ -1093,6 +1153,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       required this.name,
       required this.amountCents,
       required this.frequency,
+      this.startDate,
       this.anchorDate,
       required this.active,
       required this.createdAt});
@@ -1103,6 +1164,9 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     map['name'] = Variable<String>(name);
     map['amount_cents'] = Variable<int>(amountCents);
     map['frequency'] = Variable<String>(frequency);
+    if (!nullToAbsent || startDate != null) {
+      map['start_date'] = Variable<String>(startDate);
+    }
     if (!nullToAbsent || anchorDate != null) {
       map['anchor_date'] = Variable<String>(anchorDate);
     }
@@ -1117,6 +1181,9 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       name: Value(name),
       amountCents: Value(amountCents),
       frequency: Value(frequency),
+      startDate: startDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(startDate),
       anchorDate: anchorDate == null && nullToAbsent
           ? const Value.absent()
           : Value(anchorDate),
@@ -1133,6 +1200,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       name: serializer.fromJson<String>(json['name']),
       amountCents: serializer.fromJson<int>(json['amountCents']),
       frequency: serializer.fromJson<String>(json['frequency']),
+      startDate: serializer.fromJson<String?>(json['startDate']),
       anchorDate: serializer.fromJson<String?>(json['anchorDate']),
       active: serializer.fromJson<bool>(json['active']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1146,6 +1214,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       'name': serializer.toJson<String>(name),
       'amountCents': serializer.toJson<int>(amountCents),
       'frequency': serializer.toJson<String>(frequency),
+      'startDate': serializer.toJson<String?>(startDate),
       'anchorDate': serializer.toJson<String?>(anchorDate),
       'active': serializer.toJson<bool>(active),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1157,6 +1226,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           String? name,
           int? amountCents,
           String? frequency,
+          Value<String?> startDate = const Value.absent(),
           Value<String?> anchorDate = const Value.absent(),
           bool? active,
           DateTime? createdAt}) =>
@@ -1165,6 +1235,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
         name: name ?? this.name,
         amountCents: amountCents ?? this.amountCents,
         frequency: frequency ?? this.frequency,
+        startDate: startDate.present ? startDate.value : this.startDate,
         anchorDate: anchorDate.present ? anchorDate.value : this.anchorDate,
         active: active ?? this.active,
         createdAt: createdAt ?? this.createdAt,
@@ -1176,6 +1247,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       amountCents:
           data.amountCents.present ? data.amountCents.value : this.amountCents,
       frequency: data.frequency.present ? data.frequency.value : this.frequency,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
       anchorDate:
           data.anchorDate.present ? data.anchorDate.value : this.anchorDate,
       active: data.active.present ? data.active.value : this.active,
@@ -1190,6 +1262,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           ..write('name: $name, ')
           ..write('amountCents: $amountCents, ')
           ..write('frequency: $frequency, ')
+          ..write('startDate: $startDate, ')
           ..write('anchorDate: $anchorDate, ')
           ..write('active: $active, ')
           ..write('createdAt: $createdAt')
@@ -1198,8 +1271,8 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id, name, amountCents, frequency, anchorDate, active, createdAt);
+  int get hashCode => Object.hash(id, name, amountCents, frequency, startDate,
+      anchorDate, active, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1208,6 +1281,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           other.name == this.name &&
           other.amountCents == this.amountCents &&
           other.frequency == this.frequency &&
+          other.startDate == this.startDate &&
           other.anchorDate == this.anchorDate &&
           other.active == this.active &&
           other.createdAt == this.createdAt);
@@ -1218,6 +1292,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   final Value<String> name;
   final Value<int> amountCents;
   final Value<String> frequency;
+  final Value<String?> startDate;
   final Value<String?> anchorDate;
   final Value<bool> active;
   final Value<DateTime> createdAt;
@@ -1226,6 +1301,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     this.name = const Value.absent(),
     this.amountCents = const Value.absent(),
     this.frequency = const Value.absent(),
+    this.startDate = const Value.absent(),
     this.anchorDate = const Value.absent(),
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1235,6 +1311,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     required String name,
     required int amountCents,
     required String frequency,
+    this.startDate = const Value.absent(),
     this.anchorDate = const Value.absent(),
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1246,6 +1323,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     Expression<String>? name,
     Expression<int>? amountCents,
     Expression<String>? frequency,
+    Expression<String>? startDate,
     Expression<String>? anchorDate,
     Expression<bool>? active,
     Expression<DateTime>? createdAt,
@@ -1255,6 +1333,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       if (name != null) 'name': name,
       if (amountCents != null) 'amount_cents': amountCents,
       if (frequency != null) 'frequency': frequency,
+      if (startDate != null) 'start_date': startDate,
       if (anchorDate != null) 'anchor_date': anchorDate,
       if (active != null) 'active': active,
       if (createdAt != null) 'created_at': createdAt,
@@ -1266,6 +1345,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       Value<String>? name,
       Value<int>? amountCents,
       Value<String>? frequency,
+      Value<String?>? startDate,
       Value<String?>? anchorDate,
       Value<bool>? active,
       Value<DateTime>? createdAt}) {
@@ -1274,6 +1354,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       name: name ?? this.name,
       amountCents: amountCents ?? this.amountCents,
       frequency: frequency ?? this.frequency,
+      startDate: startDate ?? this.startDate,
       anchorDate: anchorDate ?? this.anchorDate,
       active: active ?? this.active,
       createdAt: createdAt ?? this.createdAt,
@@ -1295,6 +1376,9 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     if (frequency.present) {
       map['frequency'] = Variable<String>(frequency.value);
     }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(startDate.value);
+    }
     if (anchorDate.present) {
       map['anchor_date'] = Variable<String>(anchorDate.value);
     }
@@ -1314,6 +1398,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
           ..write('name: $name, ')
           ..write('amountCents: $amountCents, ')
           ..write('frequency: $frequency, ')
+          ..write('startDate: $startDate, ')
           ..write('anchorDate: $anchorDate, ')
           ..write('active: $active, ')
           ..write('createdAt: $createdAt')
@@ -2109,6 +2194,7 @@ typedef $$BillTemplatesTableCreateCompanionBuilder = BillTemplatesCompanion
   required String name,
   Value<String?> category,
   required int defaultAmountCents,
+  Value<String?> startDate,
   Value<bool> active,
   Value<String?> recurrenceRule,
   Value<DateTime> createdAt,
@@ -2119,6 +2205,7 @@ typedef $$BillTemplatesTableUpdateCompanionBuilder = BillTemplatesCompanion
   Value<String> name,
   Value<String?> category,
   Value<int> defaultAmountCents,
+  Value<String?> startDate,
   Value<bool> active,
   Value<String?> recurrenceRule,
   Value<DateTime> createdAt,
@@ -2145,6 +2232,9 @@ class $$BillTemplatesTableFilterComposer
   ColumnFilters<int> get defaultAmountCents => $composableBuilder(
       column: $table.defaultAmountCents,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get active => $composableBuilder(
       column: $table.active, builder: (column) => ColumnFilters(column));
@@ -2179,6 +2269,9 @@ class $$BillTemplatesTableOrderingComposer
       column: $table.defaultAmountCents,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get active => $composableBuilder(
       column: $table.active, builder: (column) => ColumnOrderings(column));
 
@@ -2210,6 +2303,9 @@ class $$BillTemplatesTableAnnotationComposer
 
   GeneratedColumn<int> get defaultAmountCents => $composableBuilder(
       column: $table.defaultAmountCents, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
 
   GeneratedColumn<bool> get active =>
       $composableBuilder(column: $table.active, builder: (column) => column);
@@ -2251,6 +2347,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<String?> category = const Value.absent(),
             Value<int> defaultAmountCents = const Value.absent(),
+            Value<String?> startDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<String?> recurrenceRule = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -2260,6 +2357,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
             name: name,
             category: category,
             defaultAmountCents: defaultAmountCents,
+            startDate: startDate,
             active: active,
             recurrenceRule: recurrenceRule,
             createdAt: createdAt,
@@ -2269,6 +2367,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
             required String name,
             Value<String?> category = const Value.absent(),
             required int defaultAmountCents,
+            Value<String?> startDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<String?> recurrenceRule = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -2278,6 +2377,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
             name: name,
             category: category,
             defaultAmountCents: defaultAmountCents,
+            startDate: startDate,
             active: active,
             recurrenceRule: recurrenceRule,
             createdAt: createdAt,
@@ -2570,6 +2670,7 @@ typedef $$IncomeSourcesTableCreateCompanionBuilder = IncomeSourcesCompanion
   required String name,
   required int amountCents,
   required String frequency,
+  Value<String?> startDate,
   Value<String?> anchorDate,
   Value<bool> active,
   Value<DateTime> createdAt,
@@ -2580,6 +2681,7 @@ typedef $$IncomeSourcesTableUpdateCompanionBuilder = IncomeSourcesCompanion
   Value<String> name,
   Value<int> amountCents,
   Value<String> frequency,
+  Value<String?> startDate,
   Value<String?> anchorDate,
   Value<bool> active,
   Value<DateTime> createdAt,
@@ -2605,6 +2707,9 @@ class $$IncomeSourcesTableFilterComposer
 
   ColumnFilters<String> get frequency => $composableBuilder(
       column: $table.frequency, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get anchorDate => $composableBuilder(
       column: $table.anchorDate, builder: (column) => ColumnFilters(column));
@@ -2637,6 +2742,9 @@ class $$IncomeSourcesTableOrderingComposer
   ColumnOrderings<String> get frequency => $composableBuilder(
       column: $table.frequency, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get startDate => $composableBuilder(
+      column: $table.startDate, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get anchorDate => $composableBuilder(
       column: $table.anchorDate, builder: (column) => ColumnOrderings(column));
 
@@ -2667,6 +2775,9 @@ class $$IncomeSourcesTableAnnotationComposer
 
   GeneratedColumn<String> get frequency =>
       $composableBuilder(column: $table.frequency, builder: (column) => column);
+
+  GeneratedColumn<String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
 
   GeneratedColumn<String> get anchorDate => $composableBuilder(
       column: $table.anchorDate, builder: (column) => column);
@@ -2708,6 +2819,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<int> amountCents = const Value.absent(),
             Value<String> frequency = const Value.absent(),
+            Value<String?> startDate = const Value.absent(),
             Value<String?> anchorDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -2717,6 +2829,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             name: name,
             amountCents: amountCents,
             frequency: frequency,
+            startDate: startDate,
             anchorDate: anchorDate,
             active: active,
             createdAt: createdAt,
@@ -2726,6 +2839,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             required String name,
             required int amountCents,
             required String frequency,
+            Value<String?> startDate = const Value.absent(),
             Value<String?> anchorDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
@@ -2735,6 +2849,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             name: name,
             amountCents: amountCents,
             frequency: frequency,
+            startDate: startDate,
             anchorDate: anchorDate,
             active: active,
             createdAt: createdAt,

@@ -306,6 +306,13 @@ class IncomeScreen extends ConsumerWidget {
                         color: Colors.grey[600],
                       ),
                     ),
+                    if (source.startDate != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Starts ${source.startDate}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -596,6 +603,7 @@ class IncomeScreen extends ConsumerWidget {
     final amtCtrl = TextEditingController();
     String frequency = 'biweekly';
     DateTime anchorDate = DateTime.now();
+    DateTime startDate = DateTime.now();
 
     await showDialog(
       context: context,
@@ -654,8 +662,30 @@ class IncomeScreen extends ConsumerWidget {
                           if (p != null) setState(() => anchorDate = p);
                         },
                         child: const Text('Pick'),
-                      ),
+                    ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(child: Text('Start date: ${ymd(startDate)}')),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2000, 1, 1),
+                          lastDate: DateTime(2100, 12, 31),
+                          initialDate: startDate,
+                        );
+                        if (picked != null) setState(() => startDate = picked);
+                      },
+                      child: const Text('Pick'),
+                    ),
+                  ],
+                ),
+                const Text(
+                  'Income will only generate on or after this date.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 if (frequency == 'biweekly')
                   const Text(
@@ -680,6 +710,7 @@ class IncomeScreen extends ConsumerWidget {
                   name: name,
                   amountCents: cents,
                   frequency: frequency,
+                  startDate: ymd(startDate),
                   anchorDate: ymd(anchorDate),
                 );
 
@@ -702,54 +733,76 @@ class IncomeScreen extends ConsumerWidget {
   Future<void> _showEditIncomeSourceDialog(BuildContext context, AppDatabase db, IncomeSource source) async {
     final nameCtrl = TextEditingController(text: source.name);
     final amtCtrl = TextEditingController(text: centsToInputString(source.amountCents));
+    DateTime startDate = source.startDate != null ? parseYmd(source.startDate!) : DateTime.now();
 
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Income Source'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amtCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Amount',
-                prefixText: '\$',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Income Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(labelText: 'Name'),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              const SizedBox(height: 12),
+              TextField(
+                controller: amtCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  prefixText: '\$',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: Text('Start date: ${ymd(startDate)}')),
+                  TextButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        firstDate: DateTime(2000, 1, 1),
+                        lastDate: DateTime(2100, 12, 31),
+                        initialDate: startDate,
+                      );
+                      if (picked != null) setState(() => startDate = picked);
+                    },
+                    child: const Text('Pick'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final name = nameCtrl.text.trim();
+                final cents = parseDollarsToCents(amtCtrl.text.trim());
+                if (name.isEmpty || cents <= 0) return;
+
+                await db.upsertIncomeSource(
+                  id: source.id,
+                  name: name,
+                  amountCents: cents,
+                  frequency: source.frequency,
+                  startDate: ymd(startDate),
+                  anchorDate: source.anchorDate,
+                  active: source.active,
+                );
+
+                if (context.mounted) Navigator.pop(context);
+              },
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final name = nameCtrl.text.trim();
-              final cents = parseDollarsToCents(amtCtrl.text.trim());
-              if (name.isEmpty || cents <= 0) return;
-
-              await db.upsertIncomeSource(
-                id: source.id,
-                name: name,
-                amountCents: cents,
-                frequency: source.frequency,
-                anchorDate: source.anchorDate,
-                active: source.active,
-              );
-
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }

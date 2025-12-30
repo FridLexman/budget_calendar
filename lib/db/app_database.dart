@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'secure_key.dart';
 
 part 'app_database.g.dart';
 
@@ -9,6 +8,7 @@ class BillTemplates extends Table {
   TextColumn get name => text()();
   TextColumn get category => text().nullable()();
   IntColumn get defaultAmountCents => integer()();
+  TextColumn get startDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   /// JSON string, e.g. {"type":"monthly","day":1}
   TextColumn get recurrenceRule => text().nullable()();
@@ -34,6 +34,7 @@ class IncomeSources extends Table {
   TextColumn get name => text()();
   IntColumn get amountCents => integer()();
   TextColumn get frequency => text()(); // monthly|weekly|biweekly|one_time|yearly
+  TextColumn get startDate => text().nullable()(); // YYYY-MM-DD
   TextColumn get anchorDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -75,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +91,12 @@ class AppDatabase extends _$AppDatabase {
       await into(categories).insert(CategoriesCompanion.insert(name: 'Food', color: const Value('#795548'), sortOrder: const Value(6)));
       await into(categories).insert(CategoriesCompanion.insert(name: 'Healthcare', color: const Value('#00BCD4'), sortOrder: const Value(7)));
       await into(categories).insert(CategoriesCompanion.insert(name: 'Other', color: const Value('#607D8B'), sortOrder: const Value(99)));
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(billTemplates, billTemplates.startDate);
+        await m.addColumn(incomeSources, incomeSources.startDate);
+      }
     },
   );
 
@@ -131,6 +138,7 @@ class AppDatabase extends _$AppDatabase {
     required String name,
     String? category,
     required int defaultAmountCents,
+    String? startDate,
     String? recurrenceRuleJson,
     bool active = true,
   }) async {
@@ -139,6 +147,7 @@ class AppDatabase extends _$AppDatabase {
       name: Value(name),
       category: Value(category),
       defaultAmountCents: Value(defaultAmountCents),
+      startDate: Value(startDate),
       recurrenceRule: Value(recurrenceRuleJson),
       active: Value(active),
     );
@@ -320,6 +329,7 @@ class AppDatabase extends _$AppDatabase {
     required String name,
     required int amountCents,
     required String frequency,
+    String? startDate,
     String? anchorDate,
     bool active = true,
   }) async {
@@ -328,6 +338,7 @@ class AppDatabase extends _$AppDatabase {
       name: Value(name),
       amountCents: Value(amountCents),
       frequency: Value(frequency),
+      startDate: Value(startDate),
       anchorDate: Value(anchorDate),
       active: Value(active),
     );

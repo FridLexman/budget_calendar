@@ -170,6 +170,13 @@ class BillsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                    if (template.startDate != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Starts ${template.startDate}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -332,6 +339,7 @@ class BillsScreen extends ConsumerWidget {
     int yearlyDay = DateTime.now().day;
     int semiMonthlyDay1 = 1;
     int semiMonthlyDay2 = 15;
+    DateTime startDate = DateTime.now();
 
     final categories = await db.getAllCategories();
 
@@ -370,6 +378,28 @@ class BillsScreen extends ConsumerWidget {
                     child: Text(c.name),
                   )).toList(),
                   onChanged: (v) => setState(() => selectedCategory = v),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: Text('Start date: ${ymd(startDate)}')),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2000, 1, 1),
+                          lastDate: DateTime(2100, 12, 31),
+                          initialDate: startDate,
+                        );
+                        if (picked != null) setState(() => startDate = picked);
+                      },
+                      child: const Text('Pick'),
+                    ),
+                  ],
+                ),
+                const Text(
+                  'Bills will only generate on or after this date.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
@@ -533,6 +563,7 @@ class BillsScreen extends ConsumerWidget {
                   name: name,
                   category: selectedCategory,
                   defaultAmountCents: cents,
+                  startDate: ymd(startDate),
                   recurrenceRuleJson: rule,
                 );
 
@@ -556,6 +587,7 @@ class BillsScreen extends ConsumerWidget {
     final nameCtrl = TextEditingController(text: template.name);
     final amtCtrl = TextEditingController(text: centsToInputString(template.defaultAmountCents));
     String? selectedCategory = template.category;
+    DateTime startDate = template.startDate != null ? parseYmd(template.startDate!) : DateTime.now();
 
     final categories = await db.getAllCategories();
 
@@ -594,6 +626,23 @@ class BillsScreen extends ConsumerWidget {
                   onChanged: (v) => setState(() => selectedCategory = v),
                 ),
                 const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: Text('Start date: ${ymd(startDate)}')),
+                    TextButton(
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          firstDate: DateTime(2000, 1, 1),
+                          lastDate: DateTime(2100, 12, 31),
+                          initialDate: startDate,
+                        );
+                        if (picked != null) setState(() => startDate = picked);
+                      },
+                      child: const Text('Pick'),
+                    ),
+                  ],
+                ),
                 const Text(
                   'Note: Changing the recurrence rule requires creating a new template.',
                   style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -617,6 +666,7 @@ class BillsScreen extends ConsumerWidget {
                   name: name,
                   category: selectedCategory,
                   defaultAmountCents: cents,
+                  startDate: ymd(startDate),
                   recurrenceRuleJson: template.recurrenceRule,
                   active: template.active,
                 );
