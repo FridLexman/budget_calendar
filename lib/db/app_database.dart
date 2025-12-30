@@ -60,7 +60,16 @@ class Categories extends Table {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
-@DriftDatabase(tables: [BillTemplates, BillInstances, IncomeSources, IncomeInstances, Categories])
+class SyncSettings extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  BoolColumn get useRemote => boolean().withDefault(const Constant(false))();
+  TextColumn get baseUrl => text().nullable()();
+  TextColumn get apiKey => text().nullable()();
+  TextColumn get mode => text().withDefault(const Constant('local_only'))(); // local_only | hybrid
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [BillTemplates, BillInstances, IncomeSources, IncomeInstances, Categories, SyncSettings])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -76,7 +85,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -97,6 +106,15 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(billTemplates, billTemplates.startDate);
         await m.addColumn(incomeSources, incomeSources.startDate);
       }
+      if (from < 3) {
+        await m.createTable(syncSettings);
+        await into(syncSettings).insert(
+          SyncSettingsCompanion(
+            useRemote: const Value(false),
+            mode: const Value('local_only'),
+          ),
+        );
+      }
     },
   );
 
@@ -115,6 +133,49 @@ class AppDatabase extends _$AppDatabase {
       name: name,
       color: Value(color),
     ));
+  }
+
+  // ------------ Sync settings operations ------------
+
+  Future<SyncSetting> ensureSyncSettingsRow() async {
+    final existing = await (select(syncSettings)..limit(1)).get();
+    if (existing.isNotEmpty) return existing.first;
+    final id = await into(syncSettings).insert(
+      SyncSettingsCompanion(
+        useRemote: const Value(false),
+        mode: const Value('local_only'),
+      ),
+    );
+    return (select(syncSettings)..where((s) => s.id.equals(id))).getSingle();
+  }
+
+  Stream<SyncSetting?> watchSyncSettings() {
+    final q = select(syncSettings)..limit(1);
+    return q.watchSingleOrNull();
+  }
+
+  Future<SyncSetting> getSyncSettingsOnce() async {
+    final existing = await (select(syncSettings)..limit(1)).get();
+    if (existing.isNotEmpty) return existing.first;
+    return ensureSyncSettingsRow();
+  }
+
+  Future<void> saveSyncSettings({
+    required bool useRemote,
+    required String mode,
+    String? baseUrl,
+    String? apiKey,
+  }) async {
+    final current = await ensureSyncSettingsRow();
+    await (update(syncSettings)..where((s) => s.id.equals(current.id))).write(
+      SyncSettingsCompanion(
+        useRemote: Value(useRemote),
+        mode: Value(mode),
+        baseUrl: Value(baseUrl),
+        apiKey: Value(apiKey),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   // ------------ Bill Template operations ------------

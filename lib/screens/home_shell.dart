@@ -3,6 +3,7 @@ import 'dashboard_screen.dart';
 import 'calendar_screen.dart';
 import 'bills_screen.dart';
 import 'income_screen.dart';
+import 'settings_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -19,6 +20,7 @@ class _HomeShellState extends State<HomeShell> {
     CalendarScreen(),
     BillsScreen(),
     IncomeScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -36,6 +38,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Calendar'),
           NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Bills'),
           NavigationDestination(icon: Icon(Icons.payments), label: 'Income'),
+          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );

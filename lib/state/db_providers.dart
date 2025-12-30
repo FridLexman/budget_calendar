@@ -17,3 +17,12 @@ final monthGeneratorProvider = Provider<MonthGenerator?>((ref) {
   final dbAsync = ref.watch(appDatabaseProvider);
   return dbAsync.whenOrNull(data: (db) => MonthGenerator(db));
 });
+
+final syncSettingsProvider = StreamProvider<SyncSetting?>((ref) {
+  final dbAsync = ref.watch(appDatabaseProvider);
+  return dbAsync.when(
+    data: (db) => db.watchSyncSettings(),
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
+});

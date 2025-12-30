@@ -2166,6 +2166,342 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }
 }
 
+class $SyncSettingsTable extends SyncSettings
+    with TableInfo<$SyncSettingsTable, SyncSetting> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _useRemoteMeta =
+      const VerificationMeta('useRemote');
+  @override
+  late final GeneratedColumn<bool> useRemote = GeneratedColumn<bool>(
+      'use_remote', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("use_remote" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _baseUrlMeta =
+      const VerificationMeta('baseUrl');
+  @override
+  late final GeneratedColumn<String> baseUrl = GeneratedColumn<String>(
+      'base_url', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _apiKeyMeta = const VerificationMeta('apiKey');
+  @override
+  late final GeneratedColumn<String> apiKey = GeneratedColumn<String>(
+      'api_key', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+      'mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('local_only'));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, useRemote, baseUrl, apiKey, mode, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_settings';
+  @override
+  VerificationContext validateIntegrity(Insertable<SyncSetting> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('use_remote')) {
+      context.handle(_useRemoteMeta,
+          useRemote.isAcceptableOrUnknown(data['use_remote']!, _useRemoteMeta));
+    }
+    if (data.containsKey('base_url')) {
+      context.handle(_baseUrlMeta,
+          baseUrl.isAcceptableOrUnknown(data['base_url']!, _baseUrlMeta));
+    }
+    if (data.containsKey('api_key')) {
+      context.handle(_apiKeyMeta,
+          apiKey.isAcceptableOrUnknown(data['api_key']!, _apiKeyMeta));
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+          _modeMeta, mode.isAcceptableOrUnknown(data['mode']!, _modeMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SyncSetting map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncSetting(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      useRemote: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}use_remote'])!,
+      baseUrl: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}base_url']),
+      apiKey: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}api_key']),
+      mode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mode'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $SyncSettingsTable createAlias(String alias) {
+    return $SyncSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class SyncSetting extends DataClass implements Insertable<SyncSetting> {
+  final int id;
+  final bool useRemote;
+  final String? baseUrl;
+  final String? apiKey;
+  final String mode;
+  final DateTime updatedAt;
+  const SyncSetting(
+      {required this.id,
+      required this.useRemote,
+      this.baseUrl,
+      this.apiKey,
+      required this.mode,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['use_remote'] = Variable<bool>(useRemote);
+    if (!nullToAbsent || baseUrl != null) {
+      map['base_url'] = Variable<String>(baseUrl);
+    }
+    if (!nullToAbsent || apiKey != null) {
+      map['api_key'] = Variable<String>(apiKey);
+    }
+    map['mode'] = Variable<String>(mode);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  SyncSettingsCompanion toCompanion(bool nullToAbsent) {
+    return SyncSettingsCompanion(
+      id: Value(id),
+      useRemote: Value(useRemote),
+      baseUrl: baseUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(baseUrl),
+      apiKey:
+          apiKey == null && nullToAbsent ? const Value.absent() : Value(apiKey),
+      mode: Value(mode),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory SyncSetting.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncSetting(
+      id: serializer.fromJson<int>(json['id']),
+      useRemote: serializer.fromJson<bool>(json['useRemote']),
+      baseUrl: serializer.fromJson<String?>(json['baseUrl']),
+      apiKey: serializer.fromJson<String?>(json['apiKey']),
+      mode: serializer.fromJson<String>(json['mode']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'useRemote': serializer.toJson<bool>(useRemote),
+      'baseUrl': serializer.toJson<String?>(baseUrl),
+      'apiKey': serializer.toJson<String?>(apiKey),
+      'mode': serializer.toJson<String>(mode),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  SyncSetting copyWith(
+          {int? id,
+          bool? useRemote,
+          Value<String?> baseUrl = const Value.absent(),
+          Value<String?> apiKey = const Value.absent(),
+          String? mode,
+          DateTime? updatedAt}) =>
+      SyncSetting(
+        id: id ?? this.id,
+        useRemote: useRemote ?? this.useRemote,
+        baseUrl: baseUrl.present ? baseUrl.value : this.baseUrl,
+        apiKey: apiKey.present ? apiKey.value : this.apiKey,
+        mode: mode ?? this.mode,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  SyncSetting copyWithCompanion(SyncSettingsCompanion data) {
+    return SyncSetting(
+      id: data.id.present ? data.id.value : this.id,
+      useRemote: data.useRemote.present ? data.useRemote.value : this.useRemote,
+      baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
+      apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncSetting(')
+          ..write('id: $id, ')
+          ..write('useRemote: $useRemote, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('apiKey: $apiKey, ')
+          ..write('mode: $mode, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, useRemote, baseUrl, apiKey, mode, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncSetting &&
+          other.id == this.id &&
+          other.useRemote == this.useRemote &&
+          other.baseUrl == this.baseUrl &&
+          other.apiKey == this.apiKey &&
+          other.mode == this.mode &&
+          other.updatedAt == this.updatedAt);
+}
+
+class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
+  final Value<int> id;
+  final Value<bool> useRemote;
+  final Value<String?> baseUrl;
+  final Value<String?> apiKey;
+  final Value<String> mode;
+  final Value<DateTime> updatedAt;
+  const SyncSettingsCompanion({
+    this.id = const Value.absent(),
+    this.useRemote = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.apiKey = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  SyncSettingsCompanion.insert({
+    this.id = const Value.absent(),
+    this.useRemote = const Value.absent(),
+    this.baseUrl = const Value.absent(),
+    this.apiKey = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  static Insertable<SyncSetting> custom({
+    Expression<int>? id,
+    Expression<bool>? useRemote,
+    Expression<String>? baseUrl,
+    Expression<String>? apiKey,
+    Expression<String>? mode,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (useRemote != null) 'use_remote': useRemote,
+      if (baseUrl != null) 'base_url': baseUrl,
+      if (apiKey != null) 'api_key': apiKey,
+      if (mode != null) 'mode': mode,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  SyncSettingsCompanion copyWith(
+      {Value<int>? id,
+      Value<bool>? useRemote,
+      Value<String?>? baseUrl,
+      Value<String?>? apiKey,
+      Value<String>? mode,
+      Value<DateTime>? updatedAt}) {
+    return SyncSettingsCompanion(
+      id: id ?? this.id,
+      useRemote: useRemote ?? this.useRemote,
+      baseUrl: baseUrl ?? this.baseUrl,
+      apiKey: apiKey ?? this.apiKey,
+      mode: mode ?? this.mode,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (useRemote.present) {
+      map['use_remote'] = Variable<bool>(useRemote.value);
+    }
+    if (baseUrl.present) {
+      map['base_url'] = Variable<String>(baseUrl.value);
+    }
+    if (apiKey.present) {
+      map['api_key'] = Variable<String>(apiKey.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncSettingsCompanion(')
+          ..write('id: $id, ')
+          ..write('useRemote: $useRemote, ')
+          ..write('baseUrl: $baseUrl, ')
+          ..write('apiKey: $apiKey, ')
+          ..write('mode: $mode, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2175,6 +2511,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $IncomeInstancesTable incomeInstances =
       $IncomeInstancesTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
+  late final $SyncSettingsTable syncSettings = $SyncSettingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2184,7 +2521,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         billInstances,
         incomeSources,
         incomeInstances,
-        categories
+        categories,
+        syncSettings
       ];
 }
 
@@ -3264,6 +3602,188 @@ typedef $$CategoriesTableProcessedTableManager = ProcessedTableManager<
     (Category, BaseReferences<_$AppDatabase, $CategoriesTable, Category>),
     Category,
     PrefetchHooks Function()>;
+typedef $$SyncSettingsTableCreateCompanionBuilder = SyncSettingsCompanion
+    Function({
+  Value<int> id,
+  Value<bool> useRemote,
+  Value<String?> baseUrl,
+  Value<String?> apiKey,
+  Value<String> mode,
+  Value<DateTime> updatedAt,
+});
+typedef $$SyncSettingsTableUpdateCompanionBuilder = SyncSettingsCompanion
+    Function({
+  Value<int> id,
+  Value<bool> useRemote,
+  Value<String?> baseUrl,
+  Value<String?> apiKey,
+  Value<String> mode,
+  Value<DateTime> updatedAt,
+});
+
+class $$SyncSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncSettingsTable> {
+  $$SyncSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get useRemote => $composableBuilder(
+      column: $table.useRemote, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get apiKey => $composableBuilder(
+      column: $table.apiKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mode => $composableBuilder(
+      column: $table.mode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$SyncSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncSettingsTable> {
+  $$SyncSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get useRemote => $composableBuilder(
+      column: $table.useRemote, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get baseUrl => $composableBuilder(
+      column: $table.baseUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get apiKey => $composableBuilder(
+      column: $table.apiKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+      column: $table.mode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$SyncSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncSettingsTable> {
+  $$SyncSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get useRemote =>
+      $composableBuilder(column: $table.useRemote, builder: (column) => column);
+
+  GeneratedColumn<String> get baseUrl =>
+      $composableBuilder(column: $table.baseUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get apiKey =>
+      $composableBuilder(column: $table.apiKey, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$SyncSettingsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SyncSettingsTable,
+    SyncSetting,
+    $$SyncSettingsTableFilterComposer,
+    $$SyncSettingsTableOrderingComposer,
+    $$SyncSettingsTableAnnotationComposer,
+    $$SyncSettingsTableCreateCompanionBuilder,
+    $$SyncSettingsTableUpdateCompanionBuilder,
+    (
+      SyncSetting,
+      BaseReferences<_$AppDatabase, $SyncSettingsTable, SyncSetting>
+    ),
+    SyncSetting,
+    PrefetchHooks Function()> {
+  $$SyncSettingsTableTableManager(_$AppDatabase db, $SyncSettingsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<bool> useRemote = const Value.absent(),
+            Value<String?> baseUrl = const Value.absent(),
+            Value<String?> apiKey = const Value.absent(),
+            Value<String> mode = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              SyncSettingsCompanion(
+            id: id,
+            useRemote: useRemote,
+            baseUrl: baseUrl,
+            apiKey: apiKey,
+            mode: mode,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<bool> useRemote = const Value.absent(),
+            Value<String?> baseUrl = const Value.absent(),
+            Value<String?> apiKey = const Value.absent(),
+            Value<String> mode = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              SyncSettingsCompanion.insert(
+            id: id,
+            useRemote: useRemote,
+            baseUrl: baseUrl,
+            apiKey: apiKey,
+            mode: mode,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$SyncSettingsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SyncSettingsTable,
+    SyncSetting,
+    $$SyncSettingsTableFilterComposer,
+    $$SyncSettingsTableOrderingComposer,
+    $$SyncSettingsTableAnnotationComposer,
+    $$SyncSettingsTableCreateCompanionBuilder,
+    $$SyncSettingsTableUpdateCompanionBuilder,
+    (
+      SyncSetting,
+      BaseReferences<_$AppDatabase, $SyncSettingsTable, SyncSetting>
+    ),
+    SyncSetting,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3278,4 +3798,6 @@ class $AppDatabaseManager {
       $$IncomeInstancesTableTableManager(_db, _db.incomeInstances);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
+  $$SyncSettingsTableTableManager get syncSettings =>
+      $$SyncSettingsTableTableManager(_db, _db.syncSettings);
 }
