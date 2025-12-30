@@ -23,13 +23,15 @@ dependencies:
   
   # Secure key storage
   flutter_secure_storage: ^9.2.2
-  
+
   # Drift (SQLite ORM)
-  drift: ^2.20.0
-  drift_flutter: ^0.2.0
+  drift: ^2.30.0
+  drift_flutter: ^0.2.8
+  path_provider: ^2.1.4
+  path: ^1.9.0
   
   # SQLCipher libs for encryption
-  sqlcipher_flutter_libs: ^0.6.3
+  sqlite3_flutter_libs: ^0.5.41
   
   # Local authentication (PIN/biometric)
   local_auth: ^2.3.0
@@ -42,7 +44,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
   build_runner: ^2.4.12
-  drift_dev: ^2.20.0
+  drift_dev: ^2.30.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

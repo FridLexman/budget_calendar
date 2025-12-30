@@ -5,6 +5,11 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Ensure we only ship SQLCipher native libs (avoid duplicate classes from sqlite3_flutter_libs)
+configurations.all {
+    exclude group: "eu.simonbinder", module: "sqlite3_flutter_libs"
+}
+
 android {
     namespace = "com.budgetcalendar.budget_calendar"
     compileSdk = 35
@@ -21,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "com.budgetcalendar.budget_calendar"
-        minSdk = 23  // Required for SQLCipher and biometric auth
+        minSdkVersion = flutter.minSdkVersion  // Required for SQLCipher and biometric auth
         targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,4 +46,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation "com.google.android.play:core:1.10.3"
 }

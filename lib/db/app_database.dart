@@ -64,19 +64,13 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   static Future<AppDatabase> open() async {
-    final key = await SecureDbKey.getOrCreate();
-
     final executor = driftDatabase(
       name: 'budget_calendar.db',
       native: const DriftNativeOptions(),
     );
 
     final db = AppDatabase(executor);
-    
-    // Apply encryption key via raw query
-    await db.customStatement("PRAGMA key = '$key';");
     await db.customStatement("PRAGMA foreign_keys = ON;");
-    
     return db;
   }
 
