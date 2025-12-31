@@ -1,23 +1,36 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 part 'app_database.g.dart';
 
 class BillTemplates extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get householdId => text().nullable()();
   TextColumn get name => text()();
   TextColumn get category => text().nullable()();
+  TextColumn get categoryRemoteId => text().nullable()();
   IntColumn get defaultAmountCents => integer()();
   TextColumn get startDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   /// JSON string, e.g. {"type":"monthly","day":1}
   TextColumn get recurrenceRule => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get updatedAtServer => integer().nullable()();
+  IntColumn get deletedAtServer => integer().nullable()();
+  TextColumn get deviceId => text().nullable()();
+  IntColumn get clientUpdatedAt => integer().nullable()();
 }
 
 class BillInstances extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get householdId => text().nullable()();
   IntColumn get templateId => integer().nullable()(); // null for one-time
+  TextColumn get templateRemoteId => text().nullable()();
   TextColumn get titleSnapshot => text()();
   IntColumn get amountCents => integer()();
   TextColumn get dueDate => text()(); // YYYY-MM-DD
@@ -26,11 +39,18 @@ class BillInstances extends Table {
   DateTimeColumn get paidAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   TextColumn get category => text().nullable()();
+  TextColumn get categoryRemoteId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get updatedAtServer => integer().nullable()();
+  IntColumn get deletedAtServer => integer().nullable()();
+  TextColumn get deviceId => text().nullable()();
+  IntColumn get clientUpdatedAt => integer().nullable()();
 }
 
 class IncomeSources extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get householdId => text().nullable()();
   TextColumn get name => text()();
   IntColumn get amountCents => integer()();
   TextColumn get frequency => text()(); // monthly|weekly|biweekly|one_time|yearly
@@ -38,11 +58,18 @@ class IncomeSources extends Table {
   TextColumn get anchorDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get updatedAtServer => integer().nullable()();
+  IntColumn get deletedAtServer => integer().nullable()();
+  TextColumn get deviceId => text().nullable()();
+  IntColumn get clientUpdatedAt => integer().nullable()();
 }
 
 class IncomeInstances extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get householdId => text().nullable()();
   IntColumn get sourceId => integer().nullable()(); // null for one-time
+  TextColumn get sourceRemoteId => text().nullable()();
   TextColumn get titleSnapshot => text()();
   IntColumn get amountCents => integer()();
   TextColumn get date => text()(); // YYYY-MM-DD
@@ -50,14 +77,24 @@ class IncomeInstances extends Table {
   DateTimeColumn get receivedAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get updatedAtServer => integer().nullable()();
+  IntColumn get deletedAtServer => integer().nullable()();
+  TextColumn get deviceId => text().nullable()();
+  IntColumn get clientUpdatedAt => integer().nullable()();
 }
 
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get householdId => text().nullable()();
   TextColumn get name => text().unique()();
   TextColumn get color => text().nullable()(); // Hex color code
   TextColumn get icon => text().nullable()(); // Icon name
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+  IntColumn get updatedAtServer => integer().nullable()();
+  IntColumn get deletedAtServer => integer().nullable()();
+  TextColumn get deviceId => text().nullable()();
+  IntColumn get clientUpdatedAt => integer().nullable()();
 }
 
 class SyncSettings extends Table {
@@ -67,9 +104,20 @@ class SyncSettings extends Table {
   TextColumn get apiKey => text().nullable()();
   TextColumn get mode => text().withDefault(const Constant('local_only'))(); // local_only | hybrid
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get lastSyncServerMs => integer().withDefault(const Constant(0))();
+  TextColumn get deviceId => text().nullable()();
 }
 
-@DriftDatabase(tables: [BillTemplates, BillInstances, IncomeSources, IncomeInstances, Categories, SyncSettings])
+class OutboxEntries extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get entityType => text()(); // categories|bill_templates|...
+  TextColumn get entityId => text()(); // remote UUID
+  TextColumn get op => text()(); // upsert|delete
+  TextColumn get payloadJson => text().nullable()();
+  DateTimeColumn get queuedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [BillTemplates, BillInstances, IncomeSources, IncomeInstances, Categories, SyncSettings, OutboxEntries])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -85,21 +133,26 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
-      // Insert default categories
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Housing', color: const Value('#4CAF50'), sortOrder: const Value(1)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Utilities', color: const Value('#2196F3'), sortOrder: const Value(2)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Transportation', color: const Value('#FF9800'), sortOrder: const Value(3)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Insurance', color: const Value('#9C27B0'), sortOrder: const Value(4)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Subscriptions', color: const Value('#E91E63'), sortOrder: const Value(5)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Food', color: const Value('#795548'), sortOrder: const Value(6)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Healthcare', color: const Value('#00BCD4'), sortOrder: const Value(7)));
-      await into(categories).insert(CategoriesCompanion.insert(name: 'Other', color: const Value('#607D8B'), sortOrder: const Value(99)));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Housing', color: const Value('#4CAF50'), sortOrder: const Value(1), remoteId: const Value('seed-housing')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Utilities', color: const Value('#2196F3'), sortOrder: const Value(2), remoteId: const Value('seed-utilities')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Transportation', color: const Value('#FF9800'), sortOrder: const Value(3), remoteId: const Value('seed-transport')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Insurance', color: const Value('#9C27B0'), sortOrder: const Value(4), remoteId: const Value('seed-insurance')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Subscriptions', color: const Value('#E91E63'), sortOrder: const Value(5), remoteId: const Value('seed-subs')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Food', color: const Value('#795548'), sortOrder: const Value(6), remoteId: const Value('seed-food')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Healthcare', color: const Value('#00BCD4'), sortOrder: const Value(7), remoteId: const Value('seed-health')));
+      await into(categories).insert(CategoriesCompanion.insert(name: 'Other', color: const Value('#607D8B'), sortOrder: const Value(99), remoteId: const Value('seed-other')));
+      await into(syncSettings).insert(
+        SyncSettingsCompanion(
+          useRemote: const Value(false),
+          mode: const Value('local_only'),
+        ),
+      );
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -115,24 +168,106 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       }
+      if (from < 4) {
+        await m.createTable(outboxEntries);
+        await m.addColumn(categories, categories.remoteId);
+        await m.addColumn(categories, categories.householdId);
+        await m.addColumn(categories, categories.updatedAtServer);
+        await m.addColumn(categories, categories.deletedAtServer);
+        await m.addColumn(categories, categories.deviceId);
+        await m.addColumn(categories, categories.clientUpdatedAt);
+
+        await m.addColumn(billTemplates, billTemplates.remoteId);
+        await m.addColumn(billTemplates, billTemplates.householdId);
+        await m.addColumn(billTemplates, billTemplates.categoryRemoteId);
+        await m.addColumn(billTemplates, billTemplates.updatedAtServer);
+        await m.addColumn(billTemplates, billTemplates.deletedAtServer);
+        await m.addColumn(billTemplates, billTemplates.deviceId);
+        await m.addColumn(billTemplates, billTemplates.clientUpdatedAt);
+
+        await m.addColumn(billInstances, billInstances.remoteId);
+        await m.addColumn(billInstances, billInstances.householdId);
+        await m.addColumn(billInstances, billInstances.templateRemoteId);
+        await m.addColumn(billInstances, billInstances.categoryRemoteId);
+        await m.addColumn(billInstances, billInstances.updatedAtServer);
+        await m.addColumn(billInstances, billInstances.deletedAtServer);
+        await m.addColumn(billInstances, billInstances.deviceId);
+        await m.addColumn(billInstances, billInstances.clientUpdatedAt);
+
+        await m.addColumn(incomeSources, incomeSources.remoteId);
+        await m.addColumn(incomeSources, incomeSources.householdId);
+        await m.addColumn(incomeSources, incomeSources.updatedAtServer);
+        await m.addColumn(incomeSources, incomeSources.deletedAtServer);
+        await m.addColumn(incomeSources, incomeSources.deviceId);
+        await m.addColumn(incomeSources, incomeSources.clientUpdatedAt);
+
+        await m.addColumn(incomeInstances, incomeInstances.remoteId);
+        await m.addColumn(incomeInstances, incomeInstances.householdId);
+        await m.addColumn(incomeInstances, incomeInstances.sourceRemoteId);
+        await m.addColumn(incomeInstances, incomeInstances.updatedAtServer);
+        await m.addColumn(incomeInstances, incomeInstances.deletedAtServer);
+        await m.addColumn(incomeInstances, incomeInstances.deviceId);
+        await m.addColumn(incomeInstances, incomeInstances.clientUpdatedAt);
+
+        await m.addColumn(syncSettings, syncSettings.lastSyncServerMs);
+        await m.addColumn(syncSettings, syncSettings.deviceId);
+      }
     },
   );
 
-  // ------------ Category operations ------------
+  // ------------ Sync helpers ------------
 
-  Future<List<Category>> getAllCategories() {
-    return (select(categories)..orderBy([(c) => OrderingTerm.asc(c.sortOrder)])).get();
+  Future<String> _ensureRemoteId(String? existing) async {
+    return existing ?? const Uuid().v4();
   }
 
-  Stream<List<Category>> watchAllCategories() {
-    return (select(categories)..orderBy([(c) => OrderingTerm.asc(c.sortOrder)])).watch();
+  Future<void> ensureRemoteIdsForAll() async {
+    await transaction(() async {
+      final catRows = await (select(categories)..where((c) => c.remoteId.isNull())).get();
+      for (final c in catRows) {
+        final id = await _ensureRemoteId(c.remoteId);
+        await (update(categories)..where((t) => t.id.equals(c.id))).write(CategoriesCompanion(remoteId: Value(id)));
+      }
+
+      final btRows = await (select(billTemplates)..where((t) => t.remoteId.isNull())).get();
+      for (final t in btRows) {
+        final id = await _ensureRemoteId(t.remoteId);
+        await (update(billTemplates)..where((b) => b.id.equals(t.id))).write(BillTemplatesCompanion(remoteId: Value(id)));
+      }
+
+      final biRows = await (select(billInstances)..where((t) => t.remoteId.isNull())).get();
+      for (final t in biRows) {
+        final id = await _ensureRemoteId(t.remoteId);
+        await (update(billInstances)..where((b) => b.id.equals(t.id))).write(BillInstancesCompanion(remoteId: Value(id)));
+      }
+
+      final isRows = await (select(incomeSources)..where((t) => t.remoteId.isNull())).get();
+      for (final t in isRows) {
+        final id = await _ensureRemoteId(t.remoteId);
+        await (update(incomeSources)..where((b) => b.id.equals(t.id))).write(IncomeSourcesCompanion(remoteId: Value(id)));
+      }
+
+      final iiRows = await (select(incomeInstances)..where((t) => t.remoteId.isNull())).get();
+      for (final t in iiRows) {
+        final id = await _ensureRemoteId(t.remoteId);
+        await (update(incomeInstances)..where((b) => b.id.equals(t.id))).write(IncomeInstancesCompanion(remoteId: Value(id)));
+      }
+    });
   }
 
-  Future<int> addCategory({required String name, String? color}) {
-    return into(categories).insert(CategoriesCompanion.insert(
-      name: name,
-      color: Value(color),
-    ));
+  Future<String> ensureDeviceId(String? existing) async {
+    if (existing != null && existing.isNotEmpty) return existing;
+    final newId = const Uuid().v4();
+    final settings = await ensureSyncSettingsRow();
+    await saveSyncSettings(
+      useRemote: settings.useRemote,
+      mode: settings.mode,
+      baseUrl: settings.baseUrl,
+      apiKey: settings.apiKey,
+      lastSyncServerMs: settings.lastSyncServerMs,
+      deviceId: newId,
+    );
+    return newId;
   }
 
   // ------------ Sync settings operations ------------
@@ -165,6 +300,8 @@ class AppDatabase extends _$AppDatabase {
     required String mode,
     String? baseUrl,
     String? apiKey,
+    int? lastSyncServerMs,
+    String? deviceId,
   }) async {
     final current = await ensureSyncSettingsRow();
     await (update(syncSettings)..where((s) => s.id.equals(current.id))).write(
@@ -174,8 +311,59 @@ class AppDatabase extends _$AppDatabase {
         baseUrl: Value(baseUrl),
         apiKey: Value(apiKey),
         updatedAt: Value(DateTime.now()),
+        lastSyncServerMs: Value(lastSyncServerMs ?? 0),
+        deviceId: Value(deviceId),
       ),
     );
+  }
+
+  // ------------ Outbox (for sync) ------------
+
+  Future<int> enqueueOutbox({
+    required String entityType,
+    required String entityId,
+    required String op,
+    Map<String, dynamic>? payload,
+  }) {
+    return into(outboxEntries).insert(
+      OutboxEntriesCompanion.insert(
+        entityType: entityType,
+        entityId: entityId,
+        op: op,
+        payloadJson: Value(payload == null ? null : jsonEncode(payload)),
+      ),
+    );
+  }
+
+  Future<List<OutboxEntry>> getOutboxBatch({int limit = 100}) {
+    final q = (select(outboxEntries)
+      ..orderBy([(o) => OrderingTerm.asc(o.queuedAt)])
+      ..limit(limit));
+    return q.get();
+  }
+
+  Future<void> clearOutboxIds(List<int> ids) async {
+    if (ids.isEmpty) return;
+    await (delete(outboxEntries)..where((o) => o.id.isIn(ids))).go();
+  }
+
+  // ------------ Category operations ------------
+
+  Future<List<Category>> getAllCategories() {
+    return (select(categories)..orderBy([(c) => OrderingTerm.asc(c.sortOrder)])).get();
+  }
+
+  Stream<List<Category>> watchAllCategories() {
+    return (select(categories)..orderBy([(c) => OrderingTerm.asc(c.sortOrder)])).watch();
+  }
+
+  Future<int> addCategory({required String name, String? color}) {
+    final uuid = const Uuid().v4();
+    return into(categories).insert(CategoriesCompanion.insert(
+      name: name,
+      color: Value(color),
+      remoteId: Value(uuid),
+    ));
   }
 
   // ------------ Bill Template operations ------------
@@ -198,15 +386,20 @@ class AppDatabase extends _$AppDatabase {
     int? id,
     required String name,
     String? category,
+    String? categoryRemoteId,
     required int defaultAmountCents,
     String? startDate,
     String? recurrenceRuleJson,
     bool active = true,
   }) async {
+    final existing = id == null ? null : await (select(billTemplates)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final remoteId = existing?.remoteId ?? const Uuid().v4();
     final companion = BillTemplatesCompanion(
       id: id == null ? const Value.absent() : Value(id),
+      remoteId: Value(remoteId),
       name: Value(name),
       category: Value(category),
+      categoryRemoteId: Value(categoryRemoteId),
       defaultAmountCents: Value(defaultAmountCents),
       startDate: Value(startDate),
       recurrenceRule: Value(recurrenceRuleJson),
@@ -221,6 +414,10 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteBillTemplate(int id) async {
+    final row = await (select(billTemplates)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_templates', entityId: row!.remoteId!, op: 'delete');
+    }
     await (delete(billTemplates)..where((t) => t.id.equals(id))).go();
   }
 
@@ -269,8 +466,10 @@ class AppDatabase extends _$AppDatabase {
     String? notes,
     String? category,
   }) {
+    final uuid = const Uuid().v4();
     return into(billInstances).insert(
       BillInstancesCompanion(
+        remoteId: Value(uuid),
         templateId: const Value(null),
         titleSnapshot: Value(title),
         amountCents: Value(amountCents),
@@ -288,8 +487,10 @@ class AppDatabase extends _$AppDatabase {
     required String dueDate,
     String? category,
   }) {
+    final uuid = const Uuid().v4();
     return into(billInstances).insert(
       BillInstancesCompanion(
+        remoteId: Value(uuid),
         templateId: Value(templateId),
         titleSnapshot: Value(title),
         amountCents: Value(amountCents),
@@ -366,6 +567,10 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteBillInstance(int id) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(id))).getSingleOrNull();
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'delete');
+    }
     await (delete(billInstances)..where((i) => i.id.equals(id))).go();
   }
 
@@ -394,8 +599,11 @@ class AppDatabase extends _$AppDatabase {
     String? anchorDate,
     bool active = true,
   }) async {
+    final existing = id == null ? null : await (select(incomeSources)..where((s) => s.id.equals(id))).getSingleOrNull();
+    final remoteId = existing?.remoteId ?? const Uuid().v4();
     final companion = IncomeSourcesCompanion(
       id: id == null ? const Value.absent() : Value(id),
+      remoteId: Value(remoteId),
       name: Value(name),
       amountCents: Value(amountCents),
       frequency: Value(frequency),
@@ -412,6 +620,10 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteIncomeSource(int id) async {
+    final row = await (select(incomeSources)..where((s) => s.id.equals(id))).getSingleOrNull();
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_sources', entityId: row!.remoteId!, op: 'delete');
+    }
     await (delete(incomeSources)..where((s) => s.id.equals(id))).go();
   }
 
@@ -445,8 +657,10 @@ class AppDatabase extends _$AppDatabase {
     required String date,
     String? notes,
   }) {
+    final uuid = const Uuid().v4();
     return into(incomeInstances).insert(
       IncomeInstancesCompanion(
+        remoteId: Value(uuid),
         sourceId: const Value(null),
         titleSnapshot: Value(title),
         amountCents: Value(amountCents),
@@ -462,8 +676,10 @@ class AppDatabase extends _$AppDatabase {
     required int amountCents,
     required String date,
   }) {
+    final uuid = const Uuid().v4();
     return into(incomeInstances).insert(
       IncomeInstancesCompanion(
+        remoteId: Value(uuid),
         sourceId: Value(sourceId),
         titleSnapshot: Value(title),
         amountCents: Value(amountCents),
@@ -506,7 +722,11 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteIncomeInstance(int id) async {
-    await (delete(incomeInstances)..where((i) => i.id.equals(id))).go();
+    final row = await (select(incomeInstances)..where((s) => s.id.equals(id))).getSingleOrNull();
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'delete');
+    }
+    await (delete(incomeInstances)..where((s) => s.id.equals(id))).go();
   }
 
   // ------------ Dashboard calculations ------------

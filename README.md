@@ -60,14 +60,10 @@ Building releases
 
 Remote sync backend (MySQL)
 ---------------------------
-The app can point to a self-hosted API that writes to MySQL. SQLite remains the local/offline store.
+SQLite remains the offline cache. A single API key = one household; all devices sharing that key see the same data. The backend uses safe, incremental sync (no destructive import/export).
 
 1. Copy `server/.env.example` to `server/.env` and set `API_KEY` plus MySQL creds.
-2. Create the schema:
-   ```
-   mysql -u <user> -p <dbname> < server/schema.sql
-   ```
-   (or start the server once; it will create tables if missing).
+2. Start once (or run `mysql < server/schema.sql`) to apply the new sync-safe schema (drops old tables).
 3. Install and run the API:
    ```
    cd server
@@ -75,13 +71,19 @@ The app can point to a self-hosted API that writes to MySQL. SQLite remains the 
    npm start
    ```
    Env vars: `PORT` (default 8080), `API_KEY`, `MYSQL_HOST/PORT/USER/PASSWORD/DATABASE`, optional `MYSQL_SSL=true`.
-4. Endpoints (require `x-api-key`):
-   - `GET /health` -> `{ ok: true }`
-   - `GET /api/v1/export` -> dumps categories, bill templates/instances, income sources/instances
-   - `POST /api/v1/import` -> replaces those tables with posted JSON payload
-5. In the app Settings tab, enable remote sync, set Base URL, and enter/scan the API key.
-
-Note: client-side live sync is still WIP; this backend provides a starting point and export/import endpoints.
+4. Sync endpoints (all require `x-api-key`):
+   - `GET /health`
+   - `GET /api/v1/sync/changes?since=<unix_ms>` — incremental changes + tombstones
+   - `POST /api/v1/sync/push` — upserts + soft deletes; server sets `updated_at_server`
+   - `GET /api/v1/sync/full` — full snapshot for initial seed
+   Legacy `import/export` is disabled to avoid table replacement.
+5. Quick verification:
+   ```
+   cd server
+   API_KEY=... BASE_URL=https://budget.local ./sync-demo.sh
+   ```
+   (trust the TLS cert or use `-k` for self-signed.)
+6. In the app Settings, enable self-hosted sync, set Base URL + API key, then use “Sync now”.
 
 Project layout
 --------------

@@ -125,6 +125,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      child: FilledButton(
+                        onPressed: _useRemote ? _syncNow : null,
+                        child: const Text('Sync now'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.history, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Last sync: ${settings?.lastSyncServerMs ?? 0}',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
                       child: FilledButton.tonal(
                         onPressed: () => _save(settings),
                         child: const Text('Save'),
@@ -185,9 +207,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       apiKey: _apiKeyCtrl.text.trim(),
       mode: _mode,
       updatedAt: DateTime.now(),
+      lastSyncServerMs: 0,
+      deviceId: null,
     );
-    final service = SyncService(settings);
+    final dbAsync = ref.read(appDatabaseProvider);
+    final db = dbAsync.requireValue;
+    final service = SyncService(db, settings);
     final result = await service.testConnection();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result.message),
+        backgroundColor: result.ok ? Colors.green : Colors.orange,
+      ),
+    );
+  }
+
+  Future<void> _syncNow() async {
+    final settings = SyncSetting(
+      id: 0,
+      useRemote: _useRemote,
+      baseUrl: _baseUrlCtrl.text.trim(),
+      apiKey: _apiKeyCtrl.text.trim(),
+      mode: _mode,
+      updatedAt: DateTime.now(),
+      lastSyncServerMs: 0,
+      deviceId: null,
+    );
+    final dbAsync = ref.read(appDatabaseProvider);
+    final db = dbAsync.requireValue;
+    final service = SyncService(db, settings);
+    final result = await service.syncNow();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
