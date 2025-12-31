@@ -18,6 +18,18 @@ class $BillTemplatesTable extends BillTemplates
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _remoteIdMeta =
+      const VerificationMeta('remoteId');
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+      'remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _householdIdMeta =
+      const VerificationMeta('householdId');
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+      'household_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -28,6 +40,12 @@ class $BillTemplatesTable extends BillTemplates
   @override
   late final GeneratedColumn<String> category = GeneratedColumn<String>(
       'category', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _categoryRemoteIdMeta =
+      const VerificationMeta('categoryRemoteId');
+  @override
+  late final GeneratedColumn<String> categoryRemoteId = GeneratedColumn<String>(
+      'category_remote_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _defaultAmountCentsMeta =
       const VerificationMeta('defaultAmountCents');
@@ -64,16 +82,47 @@ class $BillTemplatesTable extends BillTemplates
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtServerMeta =
+      const VerificationMeta('updatedAtServer');
+  @override
+  late final GeneratedColumn<int> updatedAtServer = GeneratedColumn<int>(
+      'updated_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deletedAtServerMeta =
+      const VerificationMeta('deletedAtServer');
+  @override
+  late final GeneratedColumn<int> deletedAtServer = GeneratedColumn<int>(
+      'deleted_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<int> clientUpdatedAt = GeneratedColumn<int>(
+      'client_updated_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        remoteId,
+        householdId,
         name,
         category,
+        categoryRemoteId,
         defaultAmountCents,
         startDate,
         active,
         recurrenceRule,
-        createdAt
+        createdAt,
+        updatedAtServer,
+        deletedAtServer,
+        deviceId,
+        clientUpdatedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -88,6 +137,16 @@ class $BillTemplatesTable extends BillTemplates
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('remote_id')) {
+      context.handle(_remoteIdMeta,
+          remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta));
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+          _householdIdMeta,
+          householdId.isAcceptableOrUnknown(
+              data['household_id']!, _householdIdMeta));
+    }
     if (data.containsKey('name')) {
       context.handle(
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
@@ -97,6 +156,12 @@ class $BillTemplatesTable extends BillTemplates
     if (data.containsKey('category')) {
       context.handle(_categoryMeta,
           category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
+    }
+    if (data.containsKey('category_remote_id')) {
+      context.handle(
+          _categoryRemoteIdMeta,
+          categoryRemoteId.isAcceptableOrUnknown(
+              data['category_remote_id']!, _categoryRemoteIdMeta));
     }
     if (data.containsKey('default_amount_cents')) {
       context.handle(
@@ -124,6 +189,28 @@ class $BillTemplatesTable extends BillTemplates
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     }
+    if (data.containsKey('updated_at_server')) {
+      context.handle(
+          _updatedAtServerMeta,
+          updatedAtServer.isAcceptableOrUnknown(
+              data['updated_at_server']!, _updatedAtServerMeta));
+    }
+    if (data.containsKey('deleted_at_server')) {
+      context.handle(
+          _deletedAtServerMeta,
+          deletedAtServer.isAcceptableOrUnknown(
+              data['deleted_at_server']!, _deletedAtServerMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
     return context;
   }
 
@@ -135,10 +222,16 @@ class $BillTemplatesTable extends BillTemplates
     return BillTemplate(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      remoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
+      householdId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}household_id']),
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       category: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}category']),
+      categoryRemoteId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}category_remote_id']),
       defaultAmountCents: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}default_amount_cents'])!,
       startDate: attachedDatabase.typeMapping
@@ -149,6 +242,14 @@ class $BillTemplatesTable extends BillTemplates
           .read(DriftSqlType.string, data['${effectivePrefix}recurrence_rule']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at_server']),
+      deletedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at_server']),
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      clientUpdatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_updated_at']),
     );
   }
 
@@ -160,8 +261,11 @@ class $BillTemplatesTable extends BillTemplates
 
 class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   final int id;
+  final String? remoteId;
+  final String? householdId;
   final String name;
   final String? category;
+  final String? categoryRemoteId;
   final int defaultAmountCents;
   final String? startDate;
   final bool active;
@@ -169,22 +273,42 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   /// JSON string, e.g. {"type":"monthly","day":1}
   final String? recurrenceRule;
   final DateTime createdAt;
+  final int? updatedAtServer;
+  final int? deletedAtServer;
+  final String? deviceId;
+  final int? clientUpdatedAt;
   const BillTemplate(
       {required this.id,
+      this.remoteId,
+      this.householdId,
       required this.name,
       this.category,
+      this.categoryRemoteId,
       required this.defaultAmountCents,
       this.startDate,
       required this.active,
       this.recurrenceRule,
-      required this.createdAt});
+      required this.createdAt,
+      this.updatedAtServer,
+      this.deletedAtServer,
+      this.deviceId,
+      this.clientUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || category != null) {
       map['category'] = Variable<String>(category);
+    }
+    if (!nullToAbsent || categoryRemoteId != null) {
+      map['category_remote_id'] = Variable<String>(categoryRemoteId);
     }
     map['default_amount_cents'] = Variable<int>(defaultAmountCents);
     if (!nullToAbsent || startDate != null) {
@@ -195,16 +319,37 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       map['recurrence_rule'] = Variable<String>(recurrenceRule);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || updatedAtServer != null) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer);
+    }
+    if (!nullToAbsent || deletedAtServer != null) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer);
+    }
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt);
+    }
     return map;
   }
 
   BillTemplatesCompanion toCompanion(bool nullToAbsent) {
     return BillTemplatesCompanion(
       id: Value(id),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
       name: Value(name),
       category: category == null && nullToAbsent
           ? const Value.absent()
           : Value(category),
+      categoryRemoteId: categoryRemoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryRemoteId),
       defaultAmountCents: Value(defaultAmountCents),
       startDate: startDate == null && nullToAbsent
           ? const Value.absent()
@@ -214,6 +359,18 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           ? const Value.absent()
           : Value(recurrenceRule),
       createdAt: Value(createdAt),
+      updatedAtServer: updatedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAtServer),
+      deletedAtServer: deletedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtServer),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
     );
   }
 
@@ -222,13 +379,20 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BillTemplate(
       id: serializer.fromJson<int>(json['id']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
       category: serializer.fromJson<String?>(json['category']),
+      categoryRemoteId: serializer.fromJson<String?>(json['categoryRemoteId']),
       defaultAmountCents: serializer.fromJson<int>(json['defaultAmountCents']),
       startDate: serializer.fromJson<String?>(json['startDate']),
       active: serializer.fromJson<bool>(json['active']),
       recurrenceRule: serializer.fromJson<String?>(json['recurrenceRule']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAtServer: serializer.fromJson<int?>(json['updatedAtServer']),
+      deletedAtServer: serializer.fromJson<int?>(json['deletedAtServer']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      clientUpdatedAt: serializer.fromJson<int?>(json['clientUpdatedAt']),
     );
   }
   @override
@@ -236,41 +400,76 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
       'category': serializer.toJson<String?>(category),
+      'categoryRemoteId': serializer.toJson<String?>(categoryRemoteId),
       'defaultAmountCents': serializer.toJson<int>(defaultAmountCents),
       'startDate': serializer.toJson<String?>(startDate),
       'active': serializer.toJson<bool>(active),
       'recurrenceRule': serializer.toJson<String?>(recurrenceRule),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAtServer': serializer.toJson<int?>(updatedAtServer),
+      'deletedAtServer': serializer.toJson<int?>(deletedAtServer),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'clientUpdatedAt': serializer.toJson<int?>(clientUpdatedAt),
     };
   }
 
   BillTemplate copyWith(
           {int? id,
+          Value<String?> remoteId = const Value.absent(),
+          Value<String?> householdId = const Value.absent(),
           String? name,
           Value<String?> category = const Value.absent(),
+          Value<String?> categoryRemoteId = const Value.absent(),
           int? defaultAmountCents,
           Value<String?> startDate = const Value.absent(),
           bool? active,
           Value<String?> recurrenceRule = const Value.absent(),
-          DateTime? createdAt}) =>
+          DateTime? createdAt,
+          Value<int?> updatedAtServer = const Value.absent(),
+          Value<int?> deletedAtServer = const Value.absent(),
+          Value<String?> deviceId = const Value.absent(),
+          Value<int?> clientUpdatedAt = const Value.absent()}) =>
       BillTemplate(
         id: id ?? this.id,
+        remoteId: remoteId.present ? remoteId.value : this.remoteId,
+        householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
         category: category.present ? category.value : this.category,
+        categoryRemoteId: categoryRemoteId.present
+            ? categoryRemoteId.value
+            : this.categoryRemoteId,
         defaultAmountCents: defaultAmountCents ?? this.defaultAmountCents,
         startDate: startDate.present ? startDate.value : this.startDate,
         active: active ?? this.active,
         recurrenceRule:
             recurrenceRule.present ? recurrenceRule.value : this.recurrenceRule,
         createdAt: createdAt ?? this.createdAt,
+        updatedAtServer: updatedAtServer.present
+            ? updatedAtServer.value
+            : this.updatedAtServer,
+        deletedAtServer: deletedAtServer.present
+            ? deletedAtServer.value
+            : this.deletedAtServer,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
       );
   BillTemplate copyWithCompanion(BillTemplatesCompanion data) {
     return BillTemplate(
       id: data.id.present ? data.id.value : this.id,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      householdId:
+          data.householdId.present ? data.householdId.value : this.householdId,
       name: data.name.present ? data.name.value : this.name,
       category: data.category.present ? data.category.value : this.category,
+      categoryRemoteId: data.categoryRemoteId.present
+          ? data.categoryRemoteId.value
+          : this.categoryRemoteId,
       defaultAmountCents: data.defaultAmountCents.present
           ? data.defaultAmountCents.value
           : this.defaultAmountCents,
@@ -280,6 +479,16 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           ? data.recurrenceRule.value
           : this.recurrenceRule,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAtServer: data.updatedAtServer.present
+          ? data.updatedAtServer.value
+          : this.updatedAtServer,
+      deletedAtServer: data.deletedAtServer.present
+          ? data.deletedAtServer.value
+          : this.deletedAtServer,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
     );
   }
 
@@ -287,105 +496,182 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   String toString() {
     return (StringBuffer('BillTemplate(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('category: $category, ')
+          ..write('categoryRemoteId: $categoryRemoteId, ')
           ..write('defaultAmountCents: $defaultAmountCents, ')
           ..write('startDate: $startDate, ')
           ..write('active: $active, ')
           ..write('recurrenceRule: $recurrenceRule, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, category, defaultAmountCents,
-      startDate, active, recurrenceRule, createdAt);
+  int get hashCode => Object.hash(
+      id,
+      remoteId,
+      householdId,
+      name,
+      category,
+      categoryRemoteId,
+      defaultAmountCents,
+      startDate,
+      active,
+      recurrenceRule,
+      createdAt,
+      updatedAtServer,
+      deletedAtServer,
+      deviceId,
+      clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is BillTemplate &&
           other.id == this.id &&
+          other.remoteId == this.remoteId &&
+          other.householdId == this.householdId &&
           other.name == this.name &&
           other.category == this.category &&
+          other.categoryRemoteId == this.categoryRemoteId &&
           other.defaultAmountCents == this.defaultAmountCents &&
           other.startDate == this.startDate &&
           other.active == this.active &&
           other.recurrenceRule == this.recurrenceRule &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.updatedAtServer == this.updatedAtServer &&
+          other.deletedAtServer == this.deletedAtServer &&
+          other.deviceId == this.deviceId &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
 }
 
 class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   final Value<int> id;
+  final Value<String?> remoteId;
+  final Value<String?> householdId;
   final Value<String> name;
   final Value<String?> category;
+  final Value<String?> categoryRemoteId;
   final Value<int> defaultAmountCents;
   final Value<String?> startDate;
   final Value<bool> active;
   final Value<String?> recurrenceRule;
   final Value<DateTime> createdAt;
+  final Value<int?> updatedAtServer;
+  final Value<int?> deletedAtServer;
+  final Value<String?> deviceId;
+  final Value<int?> clientUpdatedAt;
   const BillTemplatesCompanion({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.name = const Value.absent(),
     this.category = const Value.absent(),
+    this.categoryRemoteId = const Value.absent(),
     this.defaultAmountCents = const Value.absent(),
     this.startDate = const Value.absent(),
     this.active = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   });
   BillTemplatesCompanion.insert({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     required String name,
     this.category = const Value.absent(),
+    this.categoryRemoteId = const Value.absent(),
     required int defaultAmountCents,
     this.startDate = const Value.absent(),
     this.active = const Value.absent(),
     this.recurrenceRule = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   })  : name = Value(name),
         defaultAmountCents = Value(defaultAmountCents);
   static Insertable<BillTemplate> custom({
     Expression<int>? id,
+    Expression<String>? remoteId,
+    Expression<String>? householdId,
     Expression<String>? name,
     Expression<String>? category,
+    Expression<String>? categoryRemoteId,
     Expression<int>? defaultAmountCents,
     Expression<String>? startDate,
     Expression<bool>? active,
     Expression<String>? recurrenceRule,
     Expression<DateTime>? createdAt,
+    Expression<int>? updatedAtServer,
+    Expression<int>? deletedAtServer,
+    Expression<String>? deviceId,
+    Expression<int>? clientUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
       if (category != null) 'category': category,
+      if (categoryRemoteId != null) 'category_remote_id': categoryRemoteId,
       if (defaultAmountCents != null)
         'default_amount_cents': defaultAmountCents,
       if (startDate != null) 'start_date': startDate,
       if (active != null) 'active': active,
       if (recurrenceRule != null) 'recurrence_rule': recurrenceRule,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAtServer != null) 'updated_at_server': updatedAtServer,
+      if (deletedAtServer != null) 'deleted_at_server': deletedAtServer,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
     });
   }
 
   BillTemplatesCompanion copyWith(
       {Value<int>? id,
+      Value<String?>? remoteId,
+      Value<String?>? householdId,
       Value<String>? name,
       Value<String?>? category,
+      Value<String?>? categoryRemoteId,
       Value<int>? defaultAmountCents,
       Value<String?>? startDate,
       Value<bool>? active,
       Value<String?>? recurrenceRule,
-      Value<DateTime>? createdAt}) {
+      Value<DateTime>? createdAt,
+      Value<int?>? updatedAtServer,
+      Value<int?>? deletedAtServer,
+      Value<String?>? deviceId,
+      Value<int?>? clientUpdatedAt}) {
     return BillTemplatesCompanion(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
+      householdId: householdId ?? this.householdId,
       name: name ?? this.name,
       category: category ?? this.category,
+      categoryRemoteId: categoryRemoteId ?? this.categoryRemoteId,
       defaultAmountCents: defaultAmountCents ?? this.defaultAmountCents,
       startDate: startDate ?? this.startDate,
       active: active ?? this.active,
       recurrenceRule: recurrenceRule ?? this.recurrenceRule,
       createdAt: createdAt ?? this.createdAt,
+      updatedAtServer: updatedAtServer ?? this.updatedAtServer,
+      deletedAtServer: deletedAtServer ?? this.deletedAtServer,
+      deviceId: deviceId ?? this.deviceId,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
     );
   }
 
@@ -395,11 +681,20 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
+    }
+    if (categoryRemoteId.present) {
+      map['category_remote_id'] = Variable<String>(categoryRemoteId.value);
     }
     if (defaultAmountCents.present) {
       map['default_amount_cents'] = Variable<int>(defaultAmountCents.value);
@@ -416,6 +711,18 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (updatedAtServer.present) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer.value);
+    }
+    if (deletedAtServer.present) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt.value);
+    }
     return map;
   }
 
@@ -423,13 +730,20 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   String toString() {
     return (StringBuffer('BillTemplatesCompanion(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('category: $category, ')
+          ..write('categoryRemoteId: $categoryRemoteId, ')
           ..write('defaultAmountCents: $defaultAmountCents, ')
           ..write('startDate: $startDate, ')
           ..write('active: $active, ')
           ..write('recurrenceRule: $recurrenceRule, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -450,12 +764,30 @@ class $BillInstancesTable extends BillInstances
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _remoteIdMeta =
+      const VerificationMeta('remoteId');
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+      'remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _householdIdMeta =
+      const VerificationMeta('householdId');
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+      'household_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _templateIdMeta =
       const VerificationMeta('templateId');
   @override
   late final GeneratedColumn<int> templateId = GeneratedColumn<int>(
       'template_id', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _templateRemoteIdMeta =
+      const VerificationMeta('templateRemoteId');
+  @override
+  late final GeneratedColumn<String> templateRemoteId = GeneratedColumn<String>(
+      'template_remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _titleSnapshotMeta =
       const VerificationMeta('titleSnapshot');
   @override
@@ -503,6 +835,12 @@ class $BillInstancesTable extends BillInstances
   late final GeneratedColumn<String> category = GeneratedColumn<String>(
       'category', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _categoryRemoteIdMeta =
+      const VerificationMeta('categoryRemoteId');
+  @override
+  late final GeneratedColumn<String> categoryRemoteId = GeneratedColumn<String>(
+      'category_remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -511,10 +849,37 @@ class $BillInstancesTable extends BillInstances
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtServerMeta =
+      const VerificationMeta('updatedAtServer');
+  @override
+  late final GeneratedColumn<int> updatedAtServer = GeneratedColumn<int>(
+      'updated_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deletedAtServerMeta =
+      const VerificationMeta('deletedAtServer');
+  @override
+  late final GeneratedColumn<int> deletedAtServer = GeneratedColumn<int>(
+      'deleted_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<int> clientUpdatedAt = GeneratedColumn<int>(
+      'client_updated_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        remoteId,
+        householdId,
         templateId,
+        templateRemoteId,
         titleSnapshot,
         amountCents,
         dueDate,
@@ -523,7 +888,12 @@ class $BillInstancesTable extends BillInstances
         paidAt,
         notes,
         category,
-        createdAt
+        categoryRemoteId,
+        createdAt,
+        updatedAtServer,
+        deletedAtServer,
+        deviceId,
+        clientUpdatedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -538,11 +908,27 @@ class $BillInstancesTable extends BillInstances
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('remote_id')) {
+      context.handle(_remoteIdMeta,
+          remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta));
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+          _householdIdMeta,
+          householdId.isAcceptableOrUnknown(
+              data['household_id']!, _householdIdMeta));
+    }
     if (data.containsKey('template_id')) {
       context.handle(
           _templateIdMeta,
           templateId.isAcceptableOrUnknown(
               data['template_id']!, _templateIdMeta));
+    }
+    if (data.containsKey('template_remote_id')) {
+      context.handle(
+          _templateRemoteIdMeta,
+          templateRemoteId.isAcceptableOrUnknown(
+              data['template_remote_id']!, _templateRemoteIdMeta));
     }
     if (data.containsKey('title_snapshot')) {
       context.handle(
@@ -588,9 +974,37 @@ class $BillInstancesTable extends BillInstances
       context.handle(_categoryMeta,
           category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
     }
+    if (data.containsKey('category_remote_id')) {
+      context.handle(
+          _categoryRemoteIdMeta,
+          categoryRemoteId.isAcceptableOrUnknown(
+              data['category_remote_id']!, _categoryRemoteIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at_server')) {
+      context.handle(
+          _updatedAtServerMeta,
+          updatedAtServer.isAcceptableOrUnknown(
+              data['updated_at_server']!, _updatedAtServerMeta));
+    }
+    if (data.containsKey('deleted_at_server')) {
+      context.handle(
+          _deletedAtServerMeta,
+          deletedAtServer.isAcceptableOrUnknown(
+              data['deleted_at_server']!, _deletedAtServerMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
     }
     return context;
   }
@@ -603,8 +1017,14 @@ class $BillInstancesTable extends BillInstances
     return BillInstance(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      remoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
+      householdId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}household_id']),
       templateId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}template_id']),
+      templateRemoteId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}template_remote_id']),
       titleSnapshot: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}title_snapshot'])!,
       amountCents: attachedDatabase.typeMapping
@@ -621,8 +1041,18 @@ class $BillInstancesTable extends BillInstances
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
       category: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}category']),
+      categoryRemoteId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}category_remote_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at_server']),
+      deletedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at_server']),
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      clientUpdatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_updated_at']),
     );
   }
 
@@ -634,7 +1064,10 @@ class $BillInstancesTable extends BillInstances
 
 class BillInstance extends DataClass implements Insertable<BillInstance> {
   final int id;
+  final String? remoteId;
+  final String? householdId;
   final int? templateId;
+  final String? templateRemoteId;
   final String titleSnapshot;
   final int amountCents;
   final String dueDate;
@@ -643,10 +1076,18 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   final DateTime? paidAt;
   final String? notes;
   final String? category;
+  final String? categoryRemoteId;
   final DateTime createdAt;
+  final int? updatedAtServer;
+  final int? deletedAtServer;
+  final String? deviceId;
+  final int? clientUpdatedAt;
   const BillInstance(
       {required this.id,
+      this.remoteId,
+      this.householdId,
       this.templateId,
+      this.templateRemoteId,
       required this.titleSnapshot,
       required this.amountCents,
       required this.dueDate,
@@ -655,13 +1096,27 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       this.paidAt,
       this.notes,
       this.category,
-      required this.createdAt});
+      this.categoryRemoteId,
+      required this.createdAt,
+      this.updatedAtServer,
+      this.deletedAtServer,
+      this.deviceId,
+      this.clientUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     if (!nullToAbsent || templateId != null) {
       map['template_id'] = Variable<int>(templateId);
+    }
+    if (!nullToAbsent || templateRemoteId != null) {
+      map['template_remote_id'] = Variable<String>(templateRemoteId);
     }
     map['title_snapshot'] = Variable<String>(titleSnapshot);
     map['amount_cents'] = Variable<int>(amountCents);
@@ -679,16 +1134,40 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
     if (!nullToAbsent || category != null) {
       map['category'] = Variable<String>(category);
     }
+    if (!nullToAbsent || categoryRemoteId != null) {
+      map['category_remote_id'] = Variable<String>(categoryRemoteId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || updatedAtServer != null) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer);
+    }
+    if (!nullToAbsent || deletedAtServer != null) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer);
+    }
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt);
+    }
     return map;
   }
 
   BillInstancesCompanion toCompanion(bool nullToAbsent) {
     return BillInstancesCompanion(
       id: Value(id),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
       templateId: templateId == null && nullToAbsent
           ? const Value.absent()
           : Value(templateId),
+      templateRemoteId: templateRemoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(templateRemoteId),
       titleSnapshot: Value(titleSnapshot),
       amountCents: Value(amountCents),
       dueDate: Value(dueDate),
@@ -703,7 +1182,22 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       category: category == null && nullToAbsent
           ? const Value.absent()
           : Value(category),
+      categoryRemoteId: categoryRemoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryRemoteId),
       createdAt: Value(createdAt),
+      updatedAtServer: updatedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAtServer),
+      deletedAtServer: deletedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtServer),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
     );
   }
 
@@ -712,7 +1206,10 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BillInstance(
       id: serializer.fromJson<int>(json['id']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
       templateId: serializer.fromJson<int?>(json['templateId']),
+      templateRemoteId: serializer.fromJson<String?>(json['templateRemoteId']),
       titleSnapshot: serializer.fromJson<String>(json['titleSnapshot']),
       amountCents: serializer.fromJson<int>(json['amountCents']),
       dueDate: serializer.fromJson<String>(json['dueDate']),
@@ -721,7 +1218,12 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       paidAt: serializer.fromJson<DateTime?>(json['paidAt']),
       notes: serializer.fromJson<String?>(json['notes']),
       category: serializer.fromJson<String?>(json['category']),
+      categoryRemoteId: serializer.fromJson<String?>(json['categoryRemoteId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAtServer: serializer.fromJson<int?>(json['updatedAtServer']),
+      deletedAtServer: serializer.fromJson<int?>(json['deletedAtServer']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      clientUpdatedAt: serializer.fromJson<int?>(json['clientUpdatedAt']),
     );
   }
   @override
@@ -729,7 +1231,10 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'householdId': serializer.toJson<String?>(householdId),
       'templateId': serializer.toJson<int?>(templateId),
+      'templateRemoteId': serializer.toJson<String?>(templateRemoteId),
       'titleSnapshot': serializer.toJson<String>(titleSnapshot),
       'amountCents': serializer.toJson<int>(amountCents),
       'dueDate': serializer.toJson<String>(dueDate),
@@ -738,13 +1243,21 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       'paidAt': serializer.toJson<DateTime?>(paidAt),
       'notes': serializer.toJson<String?>(notes),
       'category': serializer.toJson<String?>(category),
+      'categoryRemoteId': serializer.toJson<String?>(categoryRemoteId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAtServer': serializer.toJson<int?>(updatedAtServer),
+      'deletedAtServer': serializer.toJson<int?>(deletedAtServer),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'clientUpdatedAt': serializer.toJson<int?>(clientUpdatedAt),
     };
   }
 
   BillInstance copyWith(
           {int? id,
+          Value<String?> remoteId = const Value.absent(),
+          Value<String?> householdId = const Value.absent(),
           Value<int?> templateId = const Value.absent(),
+          Value<String?> templateRemoteId = const Value.absent(),
           String? titleSnapshot,
           int? amountCents,
           String? dueDate,
@@ -753,10 +1266,20 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
           Value<DateTime?> paidAt = const Value.absent(),
           Value<String?> notes = const Value.absent(),
           Value<String?> category = const Value.absent(),
-          DateTime? createdAt}) =>
+          Value<String?> categoryRemoteId = const Value.absent(),
+          DateTime? createdAt,
+          Value<int?> updatedAtServer = const Value.absent(),
+          Value<int?> deletedAtServer = const Value.absent(),
+          Value<String?> deviceId = const Value.absent(),
+          Value<int?> clientUpdatedAt = const Value.absent()}) =>
       BillInstance(
         id: id ?? this.id,
+        remoteId: remoteId.present ? remoteId.value : this.remoteId,
+        householdId: householdId.present ? householdId.value : this.householdId,
         templateId: templateId.present ? templateId.value : this.templateId,
+        templateRemoteId: templateRemoteId.present
+            ? templateRemoteId.value
+            : this.templateRemoteId,
         titleSnapshot: titleSnapshot ?? this.titleSnapshot,
         amountCents: amountCents ?? this.amountCents,
         dueDate: dueDate ?? this.dueDate,
@@ -767,13 +1290,32 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
         paidAt: paidAt.present ? paidAt.value : this.paidAt,
         notes: notes.present ? notes.value : this.notes,
         category: category.present ? category.value : this.category,
+        categoryRemoteId: categoryRemoteId.present
+            ? categoryRemoteId.value
+            : this.categoryRemoteId,
         createdAt: createdAt ?? this.createdAt,
+        updatedAtServer: updatedAtServer.present
+            ? updatedAtServer.value
+            : this.updatedAtServer,
+        deletedAtServer: deletedAtServer.present
+            ? deletedAtServer.value
+            : this.deletedAtServer,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
       );
   BillInstance copyWithCompanion(BillInstancesCompanion data) {
     return BillInstance(
       id: data.id.present ? data.id.value : this.id,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      householdId:
+          data.householdId.present ? data.householdId.value : this.householdId,
       templateId:
           data.templateId.present ? data.templateId.value : this.templateId,
+      templateRemoteId: data.templateRemoteId.present
+          ? data.templateRemoteId.value
+          : this.templateRemoteId,
       titleSnapshot: data.titleSnapshot.present
           ? data.titleSnapshot.value
           : this.titleSnapshot,
@@ -787,7 +1329,20 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       paidAt: data.paidAt.present ? data.paidAt.value : this.paidAt,
       notes: data.notes.present ? data.notes.value : this.notes,
       category: data.category.present ? data.category.value : this.category,
+      categoryRemoteId: data.categoryRemoteId.present
+          ? data.categoryRemoteId.value
+          : this.categoryRemoteId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAtServer: data.updatedAtServer.present
+          ? data.updatedAtServer.value
+          : this.updatedAtServer,
+      deletedAtServer: data.deletedAtServer.present
+          ? data.deletedAtServer.value
+          : this.deletedAtServer,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
     );
   }
 
@@ -795,7 +1350,10 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   String toString() {
     return (StringBuffer('BillInstance(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('templateId: $templateId, ')
+          ..write('templateRemoteId: $templateRemoteId, ')
           ..write('titleSnapshot: $titleSnapshot, ')
           ..write('amountCents: $amountCents, ')
           ..write('dueDate: $dueDate, ')
@@ -804,20 +1362,46 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
           ..write('paidAt: $paidAt, ')
           ..write('notes: $notes, ')
           ..write('category: $category, ')
-          ..write('createdAt: $createdAt')
+          ..write('categoryRemoteId: $categoryRemoteId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, templateId, titleSnapshot, amountCents,
-      dueDate, status, paidAmountCents, paidAt, notes, category, createdAt);
+  int get hashCode => Object.hash(
+      id,
+      remoteId,
+      householdId,
+      templateId,
+      templateRemoteId,
+      titleSnapshot,
+      amountCents,
+      dueDate,
+      status,
+      paidAmountCents,
+      paidAt,
+      notes,
+      category,
+      categoryRemoteId,
+      createdAt,
+      updatedAtServer,
+      deletedAtServer,
+      deviceId,
+      clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is BillInstance &&
           other.id == this.id &&
+          other.remoteId == this.remoteId &&
+          other.householdId == this.householdId &&
           other.templateId == this.templateId &&
+          other.templateRemoteId == this.templateRemoteId &&
           other.titleSnapshot == this.titleSnapshot &&
           other.amountCents == this.amountCents &&
           other.dueDate == this.dueDate &&
@@ -826,12 +1410,20 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
           other.paidAt == this.paidAt &&
           other.notes == this.notes &&
           other.category == this.category &&
-          other.createdAt == this.createdAt);
+          other.categoryRemoteId == this.categoryRemoteId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAtServer == this.updatedAtServer &&
+          other.deletedAtServer == this.deletedAtServer &&
+          other.deviceId == this.deviceId &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
 }
 
 class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   final Value<int> id;
+  final Value<String?> remoteId;
+  final Value<String?> householdId;
   final Value<int?> templateId;
+  final Value<String?> templateRemoteId;
   final Value<String> titleSnapshot;
   final Value<int> amountCents;
   final Value<String> dueDate;
@@ -840,10 +1432,18 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   final Value<DateTime?> paidAt;
   final Value<String?> notes;
   final Value<String?> category;
+  final Value<String?> categoryRemoteId;
   final Value<DateTime> createdAt;
+  final Value<int?> updatedAtServer;
+  final Value<int?> deletedAtServer;
+  final Value<String?> deviceId;
+  final Value<int?> clientUpdatedAt;
   const BillInstancesCompanion({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.templateId = const Value.absent(),
+    this.templateRemoteId = const Value.absent(),
     this.titleSnapshot = const Value.absent(),
     this.amountCents = const Value.absent(),
     this.dueDate = const Value.absent(),
@@ -852,11 +1452,19 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     this.paidAt = const Value.absent(),
     this.notes = const Value.absent(),
     this.category = const Value.absent(),
+    this.categoryRemoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   });
   BillInstancesCompanion.insert({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.templateId = const Value.absent(),
+    this.templateRemoteId = const Value.absent(),
     required String titleSnapshot,
     required int amountCents,
     required String dueDate,
@@ -865,13 +1473,21 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     this.paidAt = const Value.absent(),
     this.notes = const Value.absent(),
     this.category = const Value.absent(),
+    this.categoryRemoteId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   })  : titleSnapshot = Value(titleSnapshot),
         amountCents = Value(amountCents),
         dueDate = Value(dueDate);
   static Insertable<BillInstance> custom({
     Expression<int>? id,
+    Expression<String>? remoteId,
+    Expression<String>? householdId,
     Expression<int>? templateId,
+    Expression<String>? templateRemoteId,
     Expression<String>? titleSnapshot,
     Expression<int>? amountCents,
     Expression<String>? dueDate,
@@ -880,11 +1496,19 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     Expression<DateTime>? paidAt,
     Expression<String>? notes,
     Expression<String>? category,
+    Expression<String>? categoryRemoteId,
     Expression<DateTime>? createdAt,
+    Expression<int>? updatedAtServer,
+    Expression<int>? deletedAtServer,
+    Expression<String>? deviceId,
+    Expression<int>? clientUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (householdId != null) 'household_id': householdId,
       if (templateId != null) 'template_id': templateId,
+      if (templateRemoteId != null) 'template_remote_id': templateRemoteId,
       if (titleSnapshot != null) 'title_snapshot': titleSnapshot,
       if (amountCents != null) 'amount_cents': amountCents,
       if (dueDate != null) 'due_date': dueDate,
@@ -893,13 +1517,21 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
       if (paidAt != null) 'paid_at': paidAt,
       if (notes != null) 'notes': notes,
       if (category != null) 'category': category,
+      if (categoryRemoteId != null) 'category_remote_id': categoryRemoteId,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAtServer != null) 'updated_at_server': updatedAtServer,
+      if (deletedAtServer != null) 'deleted_at_server': deletedAtServer,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
     });
   }
 
   BillInstancesCompanion copyWith(
       {Value<int>? id,
+      Value<String?>? remoteId,
+      Value<String?>? householdId,
       Value<int?>? templateId,
+      Value<String?>? templateRemoteId,
       Value<String>? titleSnapshot,
       Value<int>? amountCents,
       Value<String>? dueDate,
@@ -908,10 +1540,18 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
       Value<DateTime?>? paidAt,
       Value<String?>? notes,
       Value<String?>? category,
-      Value<DateTime>? createdAt}) {
+      Value<String?>? categoryRemoteId,
+      Value<DateTime>? createdAt,
+      Value<int?>? updatedAtServer,
+      Value<int?>? deletedAtServer,
+      Value<String?>? deviceId,
+      Value<int?>? clientUpdatedAt}) {
     return BillInstancesCompanion(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
+      householdId: householdId ?? this.householdId,
       templateId: templateId ?? this.templateId,
+      templateRemoteId: templateRemoteId ?? this.templateRemoteId,
       titleSnapshot: titleSnapshot ?? this.titleSnapshot,
       amountCents: amountCents ?? this.amountCents,
       dueDate: dueDate ?? this.dueDate,
@@ -920,7 +1560,12 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
       paidAt: paidAt ?? this.paidAt,
       notes: notes ?? this.notes,
       category: category ?? this.category,
+      categoryRemoteId: categoryRemoteId ?? this.categoryRemoteId,
       createdAt: createdAt ?? this.createdAt,
+      updatedAtServer: updatedAtServer ?? this.updatedAtServer,
+      deletedAtServer: deletedAtServer ?? this.deletedAtServer,
+      deviceId: deviceId ?? this.deviceId,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
     );
   }
 
@@ -930,8 +1575,17 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
     if (templateId.present) {
       map['template_id'] = Variable<int>(templateId.value);
+    }
+    if (templateRemoteId.present) {
+      map['template_remote_id'] = Variable<String>(templateRemoteId.value);
     }
     if (titleSnapshot.present) {
       map['title_snapshot'] = Variable<String>(titleSnapshot.value);
@@ -957,8 +1611,23 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     if (category.present) {
       map['category'] = Variable<String>(category.value);
     }
+    if (categoryRemoteId.present) {
+      map['category_remote_id'] = Variable<String>(categoryRemoteId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAtServer.present) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer.value);
+    }
+    if (deletedAtServer.present) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt.value);
     }
     return map;
   }
@@ -967,7 +1636,10 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   String toString() {
     return (StringBuffer('BillInstancesCompanion(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('templateId: $templateId, ')
+          ..write('templateRemoteId: $templateRemoteId, ')
           ..write('titleSnapshot: $titleSnapshot, ')
           ..write('amountCents: $amountCents, ')
           ..write('dueDate: $dueDate, ')
@@ -976,7 +1648,12 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
           ..write('paidAt: $paidAt, ')
           ..write('notes: $notes, ')
           ..write('category: $category, ')
-          ..write('createdAt: $createdAt')
+          ..write('categoryRemoteId: $categoryRemoteId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -997,6 +1674,18 @@ class $IncomeSourcesTable extends IncomeSources
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _remoteIdMeta =
+      const VerificationMeta('remoteId');
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+      'remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _householdIdMeta =
+      const VerificationMeta('householdId');
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+      'household_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -1043,16 +1732,46 @@ class $IncomeSourcesTable extends IncomeSources
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtServerMeta =
+      const VerificationMeta('updatedAtServer');
+  @override
+  late final GeneratedColumn<int> updatedAtServer = GeneratedColumn<int>(
+      'updated_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deletedAtServerMeta =
+      const VerificationMeta('deletedAtServer');
+  @override
+  late final GeneratedColumn<int> deletedAtServer = GeneratedColumn<int>(
+      'deleted_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<int> clientUpdatedAt = GeneratedColumn<int>(
+      'client_updated_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        remoteId,
+        householdId,
         name,
         amountCents,
         frequency,
         startDate,
         anchorDate,
         active,
-        createdAt
+        createdAt,
+        updatedAtServer,
+        deletedAtServer,
+        deviceId,
+        clientUpdatedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1066,6 +1785,16 @@ class $IncomeSourcesTable extends IncomeSources
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(_remoteIdMeta,
+          remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta));
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+          _householdIdMeta,
+          householdId.isAcceptableOrUnknown(
+              data['household_id']!, _householdIdMeta));
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -1105,6 +1834,28 @@ class $IncomeSourcesTable extends IncomeSources
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     }
+    if (data.containsKey('updated_at_server')) {
+      context.handle(
+          _updatedAtServerMeta,
+          updatedAtServer.isAcceptableOrUnknown(
+              data['updated_at_server']!, _updatedAtServerMeta));
+    }
+    if (data.containsKey('deleted_at_server')) {
+      context.handle(
+          _deletedAtServerMeta,
+          deletedAtServer.isAcceptableOrUnknown(
+              data['deleted_at_server']!, _deletedAtServerMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
     return context;
   }
 
@@ -1116,6 +1867,10 @@ class $IncomeSourcesTable extends IncomeSources
     return IncomeSource(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      remoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
+      householdId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}household_id']),
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       amountCents: attachedDatabase.typeMapping
@@ -1130,6 +1885,14 @@ class $IncomeSourcesTable extends IncomeSources
           .read(DriftSqlType.bool, data['${effectivePrefix}active'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at_server']),
+      deletedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at_server']),
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      clientUpdatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_updated_at']),
     );
   }
 
@@ -1141,6 +1904,8 @@ class $IncomeSourcesTable extends IncomeSources
 
 class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   final int id;
+  final String? remoteId;
+  final String? householdId;
   final String name;
   final int amountCents;
   final String frequency;
@@ -1148,19 +1913,35 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   final String? anchorDate;
   final bool active;
   final DateTime createdAt;
+  final int? updatedAtServer;
+  final int? deletedAtServer;
+  final String? deviceId;
+  final int? clientUpdatedAt;
   const IncomeSource(
       {required this.id,
+      this.remoteId,
+      this.householdId,
       required this.name,
       required this.amountCents,
       required this.frequency,
       this.startDate,
       this.anchorDate,
       required this.active,
-      required this.createdAt});
+      required this.createdAt,
+      this.updatedAtServer,
+      this.deletedAtServer,
+      this.deviceId,
+      this.clientUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     map['name'] = Variable<String>(name);
     map['amount_cents'] = Variable<int>(amountCents);
     map['frequency'] = Variable<String>(frequency);
@@ -1172,12 +1953,30 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     }
     map['active'] = Variable<bool>(active);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || updatedAtServer != null) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer);
+    }
+    if (!nullToAbsent || deletedAtServer != null) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer);
+    }
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt);
+    }
     return map;
   }
 
   IncomeSourcesCompanion toCompanion(bool nullToAbsent) {
     return IncomeSourcesCompanion(
       id: Value(id),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
       name: Value(name),
       amountCents: Value(amountCents),
       frequency: Value(frequency),
@@ -1189,6 +1988,18 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           : Value(anchorDate),
       active: Value(active),
       createdAt: Value(createdAt),
+      updatedAtServer: updatedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAtServer),
+      deletedAtServer: deletedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtServer),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
     );
   }
 
@@ -1197,6 +2008,8 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return IncomeSource(
       id: serializer.fromJson<int>(json['id']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
       amountCents: serializer.fromJson<int>(json['amountCents']),
       frequency: serializer.fromJson<String>(json['frequency']),
@@ -1204,6 +2017,10 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       anchorDate: serializer.fromJson<String?>(json['anchorDate']),
       active: serializer.fromJson<bool>(json['active']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAtServer: serializer.fromJson<int?>(json['updatedAtServer']),
+      deletedAtServer: serializer.fromJson<int?>(json['deletedAtServer']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      clientUpdatedAt: serializer.fromJson<int?>(json['clientUpdatedAt']),
     );
   }
   @override
@@ -1211,6 +2028,8 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
       'amountCents': serializer.toJson<int>(amountCents),
       'frequency': serializer.toJson<String>(frequency),
@@ -1218,20 +2037,32 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       'anchorDate': serializer.toJson<String?>(anchorDate),
       'active': serializer.toJson<bool>(active),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAtServer': serializer.toJson<int?>(updatedAtServer),
+      'deletedAtServer': serializer.toJson<int?>(deletedAtServer),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'clientUpdatedAt': serializer.toJson<int?>(clientUpdatedAt),
     };
   }
 
   IncomeSource copyWith(
           {int? id,
+          Value<String?> remoteId = const Value.absent(),
+          Value<String?> householdId = const Value.absent(),
           String? name,
           int? amountCents,
           String? frequency,
           Value<String?> startDate = const Value.absent(),
           Value<String?> anchorDate = const Value.absent(),
           bool? active,
-          DateTime? createdAt}) =>
+          DateTime? createdAt,
+          Value<int?> updatedAtServer = const Value.absent(),
+          Value<int?> deletedAtServer = const Value.absent(),
+          Value<String?> deviceId = const Value.absent(),
+          Value<int?> clientUpdatedAt = const Value.absent()}) =>
       IncomeSource(
         id: id ?? this.id,
+        remoteId: remoteId.present ? remoteId.value : this.remoteId,
+        householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
         amountCents: amountCents ?? this.amountCents,
         frequency: frequency ?? this.frequency,
@@ -1239,10 +2070,23 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
         anchorDate: anchorDate.present ? anchorDate.value : this.anchorDate,
         active: active ?? this.active,
         createdAt: createdAt ?? this.createdAt,
+        updatedAtServer: updatedAtServer.present
+            ? updatedAtServer.value
+            : this.updatedAtServer,
+        deletedAtServer: deletedAtServer.present
+            ? deletedAtServer.value
+            : this.deletedAtServer,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
       );
   IncomeSource copyWithCompanion(IncomeSourcesCompanion data) {
     return IncomeSource(
       id: data.id.present ? data.id.value : this.id,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      householdId:
+          data.householdId.present ? data.householdId.value : this.householdId,
       name: data.name.present ? data.name.value : this.name,
       amountCents:
           data.amountCents.present ? data.amountCents.value : this.amountCents,
@@ -1252,6 +2096,16 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           data.anchorDate.present ? data.anchorDate.value : this.anchorDate,
       active: data.active.present ? data.active.value : this.active,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAtServer: data.updatedAtServer.present
+          ? data.updatedAtServer.value
+          : this.updatedAtServer,
+      deletedAtServer: data.deletedAtServer.present
+          ? data.deletedAtServer.value
+          : this.deletedAtServer,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
     );
   }
 
@@ -1259,36 +2113,63 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   String toString() {
     return (StringBuffer('IncomeSource(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('amountCents: $amountCents, ')
           ..write('frequency: $frequency, ')
           ..write('startDate: $startDate, ')
           ..write('anchorDate: $anchorDate, ')
           ..write('active: $active, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, amountCents, frequency, startDate,
-      anchorDate, active, createdAt);
+  int get hashCode => Object.hash(
+      id,
+      remoteId,
+      householdId,
+      name,
+      amountCents,
+      frequency,
+      startDate,
+      anchorDate,
+      active,
+      createdAt,
+      updatedAtServer,
+      deletedAtServer,
+      deviceId,
+      clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is IncomeSource &&
           other.id == this.id &&
+          other.remoteId == this.remoteId &&
+          other.householdId == this.householdId &&
           other.name == this.name &&
           other.amountCents == this.amountCents &&
           other.frequency == this.frequency &&
           other.startDate == this.startDate &&
           other.anchorDate == this.anchorDate &&
           other.active == this.active &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.updatedAtServer == this.updatedAtServer &&
+          other.deletedAtServer == this.deletedAtServer &&
+          other.deviceId == this.deviceId &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
 }
 
 class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   final Value<int> id;
+  final Value<String?> remoteId;
+  final Value<String?> householdId;
   final Value<String> name;
   final Value<int> amountCents;
   final Value<String> frequency;
@@ -1296,8 +2177,14 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   final Value<String?> anchorDate;
   final Value<bool> active;
   final Value<DateTime> createdAt;
+  final Value<int?> updatedAtServer;
+  final Value<int?> deletedAtServer;
+  final Value<String?> deviceId;
+  final Value<int?> clientUpdatedAt;
   const IncomeSourcesCompanion({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.name = const Value.absent(),
     this.amountCents = const Value.absent(),
     this.frequency = const Value.absent(),
@@ -1305,9 +2192,15 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     this.anchorDate = const Value.absent(),
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   });
   IncomeSourcesCompanion.insert({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     required String name,
     required int amountCents,
     required String frequency,
@@ -1315,11 +2208,17 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     this.anchorDate = const Value.absent(),
     this.active = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   })  : name = Value(name),
         amountCents = Value(amountCents),
         frequency = Value(frequency);
   static Insertable<IncomeSource> custom({
     Expression<int>? id,
+    Expression<String>? remoteId,
+    Expression<String>? householdId,
     Expression<String>? name,
     Expression<int>? amountCents,
     Expression<String>? frequency,
@@ -1327,9 +2226,15 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     Expression<String>? anchorDate,
     Expression<bool>? active,
     Expression<DateTime>? createdAt,
+    Expression<int>? updatedAtServer,
+    Expression<int>? deletedAtServer,
+    Expression<String>? deviceId,
+    Expression<int>? clientUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
       if (amountCents != null) 'amount_cents': amountCents,
       if (frequency != null) 'frequency': frequency,
@@ -1337,20 +2242,32 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       if (anchorDate != null) 'anchor_date': anchorDate,
       if (active != null) 'active': active,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAtServer != null) 'updated_at_server': updatedAtServer,
+      if (deletedAtServer != null) 'deleted_at_server': deletedAtServer,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
     });
   }
 
   IncomeSourcesCompanion copyWith(
       {Value<int>? id,
+      Value<String?>? remoteId,
+      Value<String?>? householdId,
       Value<String>? name,
       Value<int>? amountCents,
       Value<String>? frequency,
       Value<String?>? startDate,
       Value<String?>? anchorDate,
       Value<bool>? active,
-      Value<DateTime>? createdAt}) {
+      Value<DateTime>? createdAt,
+      Value<int?>? updatedAtServer,
+      Value<int?>? deletedAtServer,
+      Value<String?>? deviceId,
+      Value<int?>? clientUpdatedAt}) {
     return IncomeSourcesCompanion(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
+      householdId: householdId ?? this.householdId,
       name: name ?? this.name,
       amountCents: amountCents ?? this.amountCents,
       frequency: frequency ?? this.frequency,
@@ -1358,6 +2275,10 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       anchorDate: anchorDate ?? this.anchorDate,
       active: active ?? this.active,
       createdAt: createdAt ?? this.createdAt,
+      updatedAtServer: updatedAtServer ?? this.updatedAtServer,
+      deletedAtServer: deletedAtServer ?? this.deletedAtServer,
+      deviceId: deviceId ?? this.deviceId,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
     );
   }
 
@@ -1366,6 +2287,12 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -1388,6 +2315,18 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (updatedAtServer.present) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer.value);
+    }
+    if (deletedAtServer.present) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt.value);
+    }
     return map;
   }
 
@@ -1395,13 +2334,19 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   String toString() {
     return (StringBuffer('IncomeSourcesCompanion(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('amountCents: $amountCents, ')
           ..write('frequency: $frequency, ')
           ..write('startDate: $startDate, ')
           ..write('anchorDate: $anchorDate, ')
           ..write('active: $active, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -1422,12 +2367,30 @@ class $IncomeInstancesTable extends IncomeInstances
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _remoteIdMeta =
+      const VerificationMeta('remoteId');
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+      'remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _householdIdMeta =
+      const VerificationMeta('householdId');
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+      'household_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _sourceIdMeta =
       const VerificationMeta('sourceId');
   @override
   late final GeneratedColumn<int> sourceId = GeneratedColumn<int>(
       'source_id', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _sourceRemoteIdMeta =
+      const VerificationMeta('sourceRemoteId');
+  @override
+  late final GeneratedColumn<String> sourceRemoteId = GeneratedColumn<String>(
+      'source_remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _titleSnapshotMeta =
       const VerificationMeta('titleSnapshot');
   @override
@@ -1471,17 +2434,48 @@ class $IncomeInstancesTable extends IncomeInstances
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtServerMeta =
+      const VerificationMeta('updatedAtServer');
+  @override
+  late final GeneratedColumn<int> updatedAtServer = GeneratedColumn<int>(
+      'updated_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deletedAtServerMeta =
+      const VerificationMeta('deletedAtServer');
+  @override
+  late final GeneratedColumn<int> deletedAtServer = GeneratedColumn<int>(
+      'deleted_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<int> clientUpdatedAt = GeneratedColumn<int>(
+      'client_updated_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        remoteId,
+        householdId,
         sourceId,
+        sourceRemoteId,
         titleSnapshot,
         amountCents,
         date,
         status,
         receivedAt,
         notes,
-        createdAt
+        createdAt,
+        updatedAtServer,
+        deletedAtServer,
+        deviceId,
+        clientUpdatedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1496,9 +2490,25 @@ class $IncomeInstancesTable extends IncomeInstances
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('remote_id')) {
+      context.handle(_remoteIdMeta,
+          remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta));
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+          _householdIdMeta,
+          householdId.isAcceptableOrUnknown(
+              data['household_id']!, _householdIdMeta));
+    }
     if (data.containsKey('source_id')) {
       context.handle(_sourceIdMeta,
           sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta));
+    }
+    if (data.containsKey('source_remote_id')) {
+      context.handle(
+          _sourceRemoteIdMeta,
+          sourceRemoteId.isAcceptableOrUnknown(
+              data['source_remote_id']!, _sourceRemoteIdMeta));
     }
     if (data.containsKey('title_snapshot')) {
       context.handle(
@@ -1540,6 +2550,28 @@ class $IncomeInstancesTable extends IncomeInstances
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
     }
+    if (data.containsKey('updated_at_server')) {
+      context.handle(
+          _updatedAtServerMeta,
+          updatedAtServer.isAcceptableOrUnknown(
+              data['updated_at_server']!, _updatedAtServerMeta));
+    }
+    if (data.containsKey('deleted_at_server')) {
+      context.handle(
+          _deletedAtServerMeta,
+          deletedAtServer.isAcceptableOrUnknown(
+              data['deleted_at_server']!, _deletedAtServerMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
     return context;
   }
 
@@ -1551,8 +2583,14 @@ class $IncomeInstancesTable extends IncomeInstances
     return IncomeInstance(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      remoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
+      householdId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}household_id']),
       sourceId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}source_id']),
+      sourceRemoteId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}source_remote_id']),
       titleSnapshot: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}title_snapshot'])!,
       amountCents: attachedDatabase.typeMapping
@@ -1567,6 +2605,14 @@ class $IncomeInstancesTable extends IncomeInstances
           .read(DriftSqlType.string, data['${effectivePrefix}notes']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at_server']),
+      deletedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at_server']),
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      clientUpdatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_updated_at']),
     );
   }
 
@@ -1578,7 +2624,10 @@ class $IncomeInstancesTable extends IncomeInstances
 
 class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   final int id;
+  final String? remoteId;
+  final String? householdId;
   final int? sourceId;
+  final String? sourceRemoteId;
   final String titleSnapshot;
   final int amountCents;
   final String date;
@@ -1586,22 +2635,42 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   final DateTime? receivedAt;
   final String? notes;
   final DateTime createdAt;
+  final int? updatedAtServer;
+  final int? deletedAtServer;
+  final String? deviceId;
+  final int? clientUpdatedAt;
   const IncomeInstance(
       {required this.id,
+      this.remoteId,
+      this.householdId,
       this.sourceId,
+      this.sourceRemoteId,
       required this.titleSnapshot,
       required this.amountCents,
       required this.date,
       required this.status,
       this.receivedAt,
       this.notes,
-      required this.createdAt});
+      required this.createdAt,
+      this.updatedAtServer,
+      this.deletedAtServer,
+      this.deviceId,
+      this.clientUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     if (!nullToAbsent || sourceId != null) {
       map['source_id'] = Variable<int>(sourceId);
+    }
+    if (!nullToAbsent || sourceRemoteId != null) {
+      map['source_remote_id'] = Variable<String>(sourceRemoteId);
     }
     map['title_snapshot'] = Variable<String>(titleSnapshot);
     map['amount_cents'] = Variable<int>(amountCents);
@@ -1614,15 +2683,36 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
       map['notes'] = Variable<String>(notes);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || updatedAtServer != null) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer);
+    }
+    if (!nullToAbsent || deletedAtServer != null) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer);
+    }
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt);
+    }
     return map;
   }
 
   IncomeInstancesCompanion toCompanion(bool nullToAbsent) {
     return IncomeInstancesCompanion(
       id: Value(id),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
       sourceId: sourceId == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceId),
+      sourceRemoteId: sourceRemoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceRemoteId),
       titleSnapshot: Value(titleSnapshot),
       amountCents: Value(amountCents),
       date: Value(date),
@@ -1633,6 +2723,18 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
       notes:
           notes == null && nullToAbsent ? const Value.absent() : Value(notes),
       createdAt: Value(createdAt),
+      updatedAtServer: updatedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAtServer),
+      deletedAtServer: deletedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtServer),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
     );
   }
 
@@ -1641,7 +2743,10 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return IncomeInstance(
       id: serializer.fromJson<int>(json['id']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
       sourceId: serializer.fromJson<int?>(json['sourceId']),
+      sourceRemoteId: serializer.fromJson<String?>(json['sourceRemoteId']),
       titleSnapshot: serializer.fromJson<String>(json['titleSnapshot']),
       amountCents: serializer.fromJson<int>(json['amountCents']),
       date: serializer.fromJson<String>(json['date']),
@@ -1649,6 +2754,10 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
       receivedAt: serializer.fromJson<DateTime?>(json['receivedAt']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAtServer: serializer.fromJson<int?>(json['updatedAtServer']),
+      deletedAtServer: serializer.fromJson<int?>(json['deletedAtServer']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      clientUpdatedAt: serializer.fromJson<int?>(json['clientUpdatedAt']),
     );
   }
   @override
@@ -1656,7 +2765,10 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'householdId': serializer.toJson<String?>(householdId),
       'sourceId': serializer.toJson<int?>(sourceId),
+      'sourceRemoteId': serializer.toJson<String?>(sourceRemoteId),
       'titleSnapshot': serializer.toJson<String>(titleSnapshot),
       'amountCents': serializer.toJson<int>(amountCents),
       'date': serializer.toJson<String>(date),
@@ -1664,22 +2776,37 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
       'receivedAt': serializer.toJson<DateTime?>(receivedAt),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAtServer': serializer.toJson<int?>(updatedAtServer),
+      'deletedAtServer': serializer.toJson<int?>(deletedAtServer),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'clientUpdatedAt': serializer.toJson<int?>(clientUpdatedAt),
     };
   }
 
   IncomeInstance copyWith(
           {int? id,
+          Value<String?> remoteId = const Value.absent(),
+          Value<String?> householdId = const Value.absent(),
           Value<int?> sourceId = const Value.absent(),
+          Value<String?> sourceRemoteId = const Value.absent(),
           String? titleSnapshot,
           int? amountCents,
           String? date,
           String? status,
           Value<DateTime?> receivedAt = const Value.absent(),
           Value<String?> notes = const Value.absent(),
-          DateTime? createdAt}) =>
+          DateTime? createdAt,
+          Value<int?> updatedAtServer = const Value.absent(),
+          Value<int?> deletedAtServer = const Value.absent(),
+          Value<String?> deviceId = const Value.absent(),
+          Value<int?> clientUpdatedAt = const Value.absent()}) =>
       IncomeInstance(
         id: id ?? this.id,
+        remoteId: remoteId.present ? remoteId.value : this.remoteId,
+        householdId: householdId.present ? householdId.value : this.householdId,
         sourceId: sourceId.present ? sourceId.value : this.sourceId,
+        sourceRemoteId:
+            sourceRemoteId.present ? sourceRemoteId.value : this.sourceRemoteId,
         titleSnapshot: titleSnapshot ?? this.titleSnapshot,
         amountCents: amountCents ?? this.amountCents,
         date: date ?? this.date,
@@ -1687,11 +2814,27 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
         receivedAt: receivedAt.present ? receivedAt.value : this.receivedAt,
         notes: notes.present ? notes.value : this.notes,
         createdAt: createdAt ?? this.createdAt,
+        updatedAtServer: updatedAtServer.present
+            ? updatedAtServer.value
+            : this.updatedAtServer,
+        deletedAtServer: deletedAtServer.present
+            ? deletedAtServer.value
+            : this.deletedAtServer,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
       );
   IncomeInstance copyWithCompanion(IncomeInstancesCompanion data) {
     return IncomeInstance(
       id: data.id.present ? data.id.value : this.id,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      householdId:
+          data.householdId.present ? data.householdId.value : this.householdId,
       sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      sourceRemoteId: data.sourceRemoteId.present
+          ? data.sourceRemoteId.value
+          : this.sourceRemoteId,
       titleSnapshot: data.titleSnapshot.present
           ? data.titleSnapshot.value
           : this.titleSnapshot,
@@ -1703,6 +2846,16 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
           data.receivedAt.present ? data.receivedAt.value : this.receivedAt,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAtServer: data.updatedAtServer.present
+          ? data.updatedAtServer.value
+          : this.updatedAtServer,
+      deletedAtServer: data.deletedAtServer.present
+          ? data.deletedAtServer.value
+          : this.deletedAtServer,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
     );
   }
 
@@ -1710,39 +2863,71 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   String toString() {
     return (StringBuffer('IncomeInstance(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('sourceId: $sourceId, ')
+          ..write('sourceRemoteId: $sourceRemoteId, ')
           ..write('titleSnapshot: $titleSnapshot, ')
           ..write('amountCents: $amountCents, ')
           ..write('date: $date, ')
           ..write('status: $status, ')
           ..write('receivedAt: $receivedAt, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, sourceId, titleSnapshot, amountCents,
-      date, status, receivedAt, notes, createdAt);
+  int get hashCode => Object.hash(
+      id,
+      remoteId,
+      householdId,
+      sourceId,
+      sourceRemoteId,
+      titleSnapshot,
+      amountCents,
+      date,
+      status,
+      receivedAt,
+      notes,
+      createdAt,
+      updatedAtServer,
+      deletedAtServer,
+      deviceId,
+      clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is IncomeInstance &&
           other.id == this.id &&
+          other.remoteId == this.remoteId &&
+          other.householdId == this.householdId &&
           other.sourceId == this.sourceId &&
+          other.sourceRemoteId == this.sourceRemoteId &&
           other.titleSnapshot == this.titleSnapshot &&
           other.amountCents == this.amountCents &&
           other.date == this.date &&
           other.status == this.status &&
           other.receivedAt == this.receivedAt &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.updatedAtServer == this.updatedAtServer &&
+          other.deletedAtServer == this.deletedAtServer &&
+          other.deviceId == this.deviceId &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
 }
 
 class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   final Value<int> id;
+  final Value<String?> remoteId;
+  final Value<String?> householdId;
   final Value<int?> sourceId;
+  final Value<String?> sourceRemoteId;
   final Value<String> titleSnapshot;
   final Value<int> amountCents;
   final Value<String> date;
@@ -1750,9 +2935,16 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   final Value<DateTime?> receivedAt;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
+  final Value<int?> updatedAtServer;
+  final Value<int?> deletedAtServer;
+  final Value<String?> deviceId;
+  final Value<int?> clientUpdatedAt;
   const IncomeInstancesCompanion({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.sourceId = const Value.absent(),
+    this.sourceRemoteId = const Value.absent(),
     this.titleSnapshot = const Value.absent(),
     this.amountCents = const Value.absent(),
     this.date = const Value.absent(),
@@ -1760,10 +2952,17 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     this.receivedAt = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   });
   IncomeInstancesCompanion.insert({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.sourceId = const Value.absent(),
+    this.sourceRemoteId = const Value.absent(),
     required String titleSnapshot,
     required int amountCents,
     required String date,
@@ -1771,12 +2970,19 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     this.receivedAt = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   })  : titleSnapshot = Value(titleSnapshot),
         amountCents = Value(amountCents),
         date = Value(date);
   static Insertable<IncomeInstance> custom({
     Expression<int>? id,
+    Expression<String>? remoteId,
+    Expression<String>? householdId,
     Expression<int>? sourceId,
+    Expression<String>? sourceRemoteId,
     Expression<String>? titleSnapshot,
     Expression<int>? amountCents,
     Expression<String>? date,
@@ -1784,10 +2990,17 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     Expression<DateTime>? receivedAt,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<int>? updatedAtServer,
+    Expression<int>? deletedAtServer,
+    Expression<String>? deviceId,
+    Expression<int>? clientUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (householdId != null) 'household_id': householdId,
       if (sourceId != null) 'source_id': sourceId,
+      if (sourceRemoteId != null) 'source_remote_id': sourceRemoteId,
       if (titleSnapshot != null) 'title_snapshot': titleSnapshot,
       if (amountCents != null) 'amount_cents': amountCents,
       if (date != null) 'date': date,
@@ -1795,22 +3008,36 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
       if (receivedAt != null) 'received_at': receivedAt,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (updatedAtServer != null) 'updated_at_server': updatedAtServer,
+      if (deletedAtServer != null) 'deleted_at_server': deletedAtServer,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
     });
   }
 
   IncomeInstancesCompanion copyWith(
       {Value<int>? id,
+      Value<String?>? remoteId,
+      Value<String?>? householdId,
       Value<int?>? sourceId,
+      Value<String?>? sourceRemoteId,
       Value<String>? titleSnapshot,
       Value<int>? amountCents,
       Value<String>? date,
       Value<String>? status,
       Value<DateTime?>? receivedAt,
       Value<String?>? notes,
-      Value<DateTime>? createdAt}) {
+      Value<DateTime>? createdAt,
+      Value<int?>? updatedAtServer,
+      Value<int?>? deletedAtServer,
+      Value<String?>? deviceId,
+      Value<int?>? clientUpdatedAt}) {
     return IncomeInstancesCompanion(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
+      householdId: householdId ?? this.householdId,
       sourceId: sourceId ?? this.sourceId,
+      sourceRemoteId: sourceRemoteId ?? this.sourceRemoteId,
       titleSnapshot: titleSnapshot ?? this.titleSnapshot,
       amountCents: amountCents ?? this.amountCents,
       date: date ?? this.date,
@@ -1818,6 +3045,10 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
       receivedAt: receivedAt ?? this.receivedAt,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      updatedAtServer: updatedAtServer ?? this.updatedAtServer,
+      deletedAtServer: deletedAtServer ?? this.deletedAtServer,
+      deviceId: deviceId ?? this.deviceId,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
     );
   }
 
@@ -1827,8 +3058,17 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
     if (sourceId.present) {
       map['source_id'] = Variable<int>(sourceId.value);
+    }
+    if (sourceRemoteId.present) {
+      map['source_remote_id'] = Variable<String>(sourceRemoteId.value);
     }
     if (titleSnapshot.present) {
       map['title_snapshot'] = Variable<String>(titleSnapshot.value);
@@ -1851,6 +3091,18 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (updatedAtServer.present) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer.value);
+    }
+    if (deletedAtServer.present) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt.value);
+    }
     return map;
   }
 
@@ -1858,14 +3110,21 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   String toString() {
     return (StringBuffer('IncomeInstancesCompanion(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('sourceId: $sourceId, ')
+          ..write('sourceRemoteId: $sourceRemoteId, ')
           ..write('titleSnapshot: $titleSnapshot, ')
           ..write('amountCents: $amountCents, ')
           ..write('date: $date, ')
           ..write('status: $status, ')
           ..write('receivedAt: $receivedAt, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -1886,6 +3145,18 @@ class $CategoriesTable extends Categories
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _remoteIdMeta =
+      const VerificationMeta('remoteId');
+  @override
+  late final GeneratedColumn<String> remoteId = GeneratedColumn<String>(
+      'remote_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _householdIdMeta =
+      const VerificationMeta('householdId');
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+      'household_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _nameMeta = const VerificationMeta('name');
   @override
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
@@ -1911,8 +3182,44 @@ class $CategoriesTable extends Categories
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _updatedAtServerMeta =
+      const VerificationMeta('updatedAtServer');
   @override
-  List<GeneratedColumn> get $columns => [id, name, color, icon, sortOrder];
+  late final GeneratedColumn<int> updatedAtServer = GeneratedColumn<int>(
+      'updated_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deletedAtServerMeta =
+      const VerificationMeta('deletedAtServer');
+  @override
+  late final GeneratedColumn<int> deletedAtServer = GeneratedColumn<int>(
+      'deleted_at_server', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _clientUpdatedAtMeta =
+      const VerificationMeta('clientUpdatedAt');
+  @override
+  late final GeneratedColumn<int> clientUpdatedAt = GeneratedColumn<int>(
+      'client_updated_at', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        remoteId,
+        householdId,
+        name,
+        color,
+        icon,
+        sortOrder,
+        updatedAtServer,
+        deletedAtServer,
+        deviceId,
+        clientUpdatedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1925,6 +3232,16 @@ class $CategoriesTable extends Categories
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('remote_id')) {
+      context.handle(_remoteIdMeta,
+          remoteId.isAcceptableOrUnknown(data['remote_id']!, _remoteIdMeta));
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+          _householdIdMeta,
+          householdId.isAcceptableOrUnknown(
+              data['household_id']!, _householdIdMeta));
     }
     if (data.containsKey('name')) {
       context.handle(
@@ -1944,6 +3261,28 @@ class $CategoriesTable extends Categories
       context.handle(_sortOrderMeta,
           sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta));
     }
+    if (data.containsKey('updated_at_server')) {
+      context.handle(
+          _updatedAtServerMeta,
+          updatedAtServer.isAcceptableOrUnknown(
+              data['updated_at_server']!, _updatedAtServerMeta));
+    }
+    if (data.containsKey('deleted_at_server')) {
+      context.handle(
+          _deletedAtServerMeta,
+          deletedAtServer.isAcceptableOrUnknown(
+              data['deleted_at_server']!, _deletedAtServerMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
+    if (data.containsKey('client_updated_at')) {
+      context.handle(
+          _clientUpdatedAtMeta,
+          clientUpdatedAt.isAcceptableOrUnknown(
+              data['client_updated_at']!, _clientUpdatedAtMeta));
+    }
     return context;
   }
 
@@ -1955,6 +3294,10 @@ class $CategoriesTable extends Categories
     return Category(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      remoteId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
+      householdId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}household_id']),
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
       color: attachedDatabase.typeMapping
@@ -1963,6 +3306,14 @@ class $CategoriesTable extends Categories
           .read(DriftSqlType.string, data['${effectivePrefix}icon']),
       sortOrder: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}sort_order'])!,
+      updatedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}updated_at_server']),
+      deletedAtServer: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}deleted_at_server']),
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
+      clientUpdatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}client_updated_at']),
     );
   }
 
@@ -1974,20 +3325,38 @@ class $CategoriesTable extends Categories
 
 class Category extends DataClass implements Insertable<Category> {
   final int id;
+  final String? remoteId;
+  final String? householdId;
   final String name;
   final String? color;
   final String? icon;
   final int sortOrder;
+  final int? updatedAtServer;
+  final int? deletedAtServer;
+  final String? deviceId;
+  final int? clientUpdatedAt;
   const Category(
       {required this.id,
+      this.remoteId,
+      this.householdId,
       required this.name,
       this.color,
       this.icon,
-      required this.sortOrder});
+      required this.sortOrder,
+      this.updatedAtServer,
+      this.deletedAtServer,
+      this.deviceId,
+      this.clientUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || remoteId != null) {
+      map['remote_id'] = Variable<String>(remoteId);
+    }
+    if (!nullToAbsent || householdId != null) {
+      map['household_id'] = Variable<String>(householdId);
+    }
     map['name'] = Variable<String>(name);
     if (!nullToAbsent || color != null) {
       map['color'] = Variable<String>(color);
@@ -1996,17 +3365,47 @@ class Category extends DataClass implements Insertable<Category> {
       map['icon'] = Variable<String>(icon);
     }
     map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || updatedAtServer != null) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer);
+    }
+    if (!nullToAbsent || deletedAtServer != null) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer);
+    }
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
+    if (!nullToAbsent || clientUpdatedAt != null) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt);
+    }
     return map;
   }
 
   CategoriesCompanion toCompanion(bool nullToAbsent) {
     return CategoriesCompanion(
       id: Value(id),
+      remoteId: remoteId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteId),
+      householdId: householdId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(householdId),
       name: Value(name),
       color:
           color == null && nullToAbsent ? const Value.absent() : Value(color),
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
       sortOrder: Value(sortOrder),
+      updatedAtServer: updatedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedAtServer),
+      deletedAtServer: deletedAtServer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAtServer),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
+      clientUpdatedAt: clientUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientUpdatedAt),
     );
   }
 
@@ -2015,10 +3414,16 @@ class Category extends DataClass implements Insertable<Category> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Category(
       id: serializer.fromJson<int>(json['id']),
+      remoteId: serializer.fromJson<String?>(json['remoteId']),
+      householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
       color: serializer.fromJson<String?>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      updatedAtServer: serializer.fromJson<int?>(json['updatedAtServer']),
+      deletedAtServer: serializer.fromJson<int?>(json['deletedAtServer']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
+      clientUpdatedAt: serializer.fromJson<int?>(json['clientUpdatedAt']),
     );
   }
   @override
@@ -2026,33 +3431,70 @@ class Category extends DataClass implements Insertable<Category> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'remoteId': serializer.toJson<String?>(remoteId),
+      'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
       'color': serializer.toJson<String?>(color),
       'icon': serializer.toJson<String?>(icon),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'updatedAtServer': serializer.toJson<int?>(updatedAtServer),
+      'deletedAtServer': serializer.toJson<int?>(deletedAtServer),
+      'deviceId': serializer.toJson<String?>(deviceId),
+      'clientUpdatedAt': serializer.toJson<int?>(clientUpdatedAt),
     };
   }
 
   Category copyWith(
           {int? id,
+          Value<String?> remoteId = const Value.absent(),
+          Value<String?> householdId = const Value.absent(),
           String? name,
           Value<String?> color = const Value.absent(),
           Value<String?> icon = const Value.absent(),
-          int? sortOrder}) =>
+          int? sortOrder,
+          Value<int?> updatedAtServer = const Value.absent(),
+          Value<int?> deletedAtServer = const Value.absent(),
+          Value<String?> deviceId = const Value.absent(),
+          Value<int?> clientUpdatedAt = const Value.absent()}) =>
       Category(
         id: id ?? this.id,
+        remoteId: remoteId.present ? remoteId.value : this.remoteId,
+        householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
         color: color.present ? color.value : this.color,
         icon: icon.present ? icon.value : this.icon,
         sortOrder: sortOrder ?? this.sortOrder,
+        updatedAtServer: updatedAtServer.present
+            ? updatedAtServer.value
+            : this.updatedAtServer,
+        deletedAtServer: deletedAtServer.present
+            ? deletedAtServer.value
+            : this.deletedAtServer,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
+        clientUpdatedAt: clientUpdatedAt.present
+            ? clientUpdatedAt.value
+            : this.clientUpdatedAt,
       );
   Category copyWithCompanion(CategoriesCompanion data) {
     return Category(
       id: data.id.present ? data.id.value : this.id,
+      remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
+      householdId:
+          data.householdId.present ? data.householdId.value : this.householdId,
       name: data.name.present ? data.name.value : this.name,
       color: data.color.present ? data.color.value : this.color,
       icon: data.icon.present ? data.icon.value : this.icon,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      updatedAtServer: data.updatedAtServer.present
+          ? data.updatedAtServer.value
+          : this.updatedAtServer,
+      deletedAtServer: data.deletedAtServer.present
+          ? data.deletedAtServer.value
+          : this.deletedAtServer,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      clientUpdatedAt: data.clientUpdatedAt.present
+          ? data.clientUpdatedAt.value
+          : this.clientUpdatedAt,
     );
   }
 
@@ -2060,75 +3502,130 @@ class Category extends DataClass implements Insertable<Category> {
   String toString() {
     return (StringBuffer('Category(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, color, icon, sortOrder);
+  int get hashCode => Object.hash(id, remoteId, householdId, name, color, icon,
+      sortOrder, updatedAtServer, deletedAtServer, deviceId, clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Category &&
           other.id == this.id &&
+          other.remoteId == this.remoteId &&
+          other.householdId == this.householdId &&
           other.name == this.name &&
           other.color == this.color &&
           other.icon == this.icon &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.updatedAtServer == this.updatedAtServer &&
+          other.deletedAtServer == this.deletedAtServer &&
+          other.deviceId == this.deviceId &&
+          other.clientUpdatedAt == this.clientUpdatedAt);
 }
 
 class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<int> id;
+  final Value<String?> remoteId;
+  final Value<String?> householdId;
   final Value<String> name;
   final Value<String?> color;
   final Value<String?> icon;
   final Value<int> sortOrder;
+  final Value<int?> updatedAtServer;
+  final Value<int?> deletedAtServer;
+  final Value<String?> deviceId;
+  final Value<int?> clientUpdatedAt;
   const CategoriesCompanion({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     this.name = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   });
   CategoriesCompanion.insert({
     this.id = const Value.absent(),
+    this.remoteId = const Value.absent(),
+    this.householdId = const Value.absent(),
     required String name,
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.updatedAtServer = const Value.absent(),
+    this.deletedAtServer = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.clientUpdatedAt = const Value.absent(),
   }) : name = Value(name);
   static Insertable<Category> custom({
     Expression<int>? id,
+    Expression<String>? remoteId,
+    Expression<String>? householdId,
     Expression<String>? name,
     Expression<String>? color,
     Expression<String>? icon,
     Expression<int>? sortOrder,
+    Expression<int>? updatedAtServer,
+    Expression<int>? deletedAtServer,
+    Expression<String>? deviceId,
+    Expression<int>? clientUpdatedAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (remoteId != null) 'remote_id': remoteId,
+      if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (updatedAtServer != null) 'updated_at_server': updatedAtServer,
+      if (deletedAtServer != null) 'deleted_at_server': deletedAtServer,
+      if (deviceId != null) 'device_id': deviceId,
+      if (clientUpdatedAt != null) 'client_updated_at': clientUpdatedAt,
     });
   }
 
   CategoriesCompanion copyWith(
       {Value<int>? id,
+      Value<String?>? remoteId,
+      Value<String?>? householdId,
       Value<String>? name,
       Value<String?>? color,
       Value<String?>? icon,
-      Value<int>? sortOrder}) {
+      Value<int>? sortOrder,
+      Value<int?>? updatedAtServer,
+      Value<int?>? deletedAtServer,
+      Value<String?>? deviceId,
+      Value<int?>? clientUpdatedAt}) {
     return CategoriesCompanion(
       id: id ?? this.id,
+      remoteId: remoteId ?? this.remoteId,
+      householdId: householdId ?? this.householdId,
       name: name ?? this.name,
       color: color ?? this.color,
       icon: icon ?? this.icon,
       sortOrder: sortOrder ?? this.sortOrder,
+      updatedAtServer: updatedAtServer ?? this.updatedAtServer,
+      deletedAtServer: deletedAtServer ?? this.deletedAtServer,
+      deviceId: deviceId ?? this.deviceId,
+      clientUpdatedAt: clientUpdatedAt ?? this.clientUpdatedAt,
     );
   }
 
@@ -2137,6 +3634,12 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (remoteId.present) {
+      map['remote_id'] = Variable<String>(remoteId.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
@@ -2150,6 +3653,18 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (updatedAtServer.present) {
+      map['updated_at_server'] = Variable<int>(updatedAtServer.value);
+    }
+    if (deletedAtServer.present) {
+      map['deleted_at_server'] = Variable<int>(deletedAtServer.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (clientUpdatedAt.present) {
+      map['client_updated_at'] = Variable<int>(clientUpdatedAt.value);
+    }
     return map;
   }
 
@@ -2157,10 +3672,16 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   String toString() {
     return (StringBuffer('CategoriesCompanion(')
           ..write('id: $id, ')
+          ..write('remoteId: $remoteId, ')
+          ..write('householdId: $householdId, ')
           ..write('name: $name, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('updatedAtServer: $updatedAtServer, ')
+          ..write('deletedAtServer: $deletedAtServer, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('clientUpdatedAt: $clientUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -2217,9 +3738,31 @@ class $SyncSettingsTable extends SyncSettings
       type: DriftSqlType.dateTime,
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
+  static const VerificationMeta _lastSyncServerMsMeta =
+      const VerificationMeta('lastSyncServerMs');
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, useRemote, baseUrl, apiKey, mode, updatedAt];
+  late final GeneratedColumn<int> lastSyncServerMs = GeneratedColumn<int>(
+      'last_sync_server_ms', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _deviceIdMeta =
+      const VerificationMeta('deviceId');
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+      'device_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        useRemote,
+        baseUrl,
+        apiKey,
+        mode,
+        updatedAt,
+        lastSyncServerMs,
+        deviceId
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2253,6 +3796,16 @@ class $SyncSettingsTable extends SyncSettings
       context.handle(_updatedAtMeta,
           updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
     }
+    if (data.containsKey('last_sync_server_ms')) {
+      context.handle(
+          _lastSyncServerMsMeta,
+          lastSyncServerMs.isAcceptableOrUnknown(
+              data['last_sync_server_ms']!, _lastSyncServerMsMeta));
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(_deviceIdMeta,
+          deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta));
+    }
     return context;
   }
 
@@ -2274,6 +3827,10 @@ class $SyncSettingsTable extends SyncSettings
           .read(DriftSqlType.string, data['${effectivePrefix}mode'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      lastSyncServerMs: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}last_sync_server_ms'])!,
+      deviceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}device_id']),
     );
   }
 
@@ -2290,13 +3847,17 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   final String? apiKey;
   final String mode;
   final DateTime updatedAt;
+  final int lastSyncServerMs;
+  final String? deviceId;
   const SyncSetting(
       {required this.id,
       required this.useRemote,
       this.baseUrl,
       this.apiKey,
       required this.mode,
-      required this.updatedAt});
+      required this.updatedAt,
+      required this.lastSyncServerMs,
+      this.deviceId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2310,6 +3871,10 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
     }
     map['mode'] = Variable<String>(mode);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['last_sync_server_ms'] = Variable<int>(lastSyncServerMs);
+    if (!nullToAbsent || deviceId != null) {
+      map['device_id'] = Variable<String>(deviceId);
+    }
     return map;
   }
 
@@ -2324,6 +3889,10 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
           apiKey == null && nullToAbsent ? const Value.absent() : Value(apiKey),
       mode: Value(mode),
       updatedAt: Value(updatedAt),
+      lastSyncServerMs: Value(lastSyncServerMs),
+      deviceId: deviceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deviceId),
     );
   }
 
@@ -2337,6 +3906,8 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
       apiKey: serializer.fromJson<String?>(json['apiKey']),
       mode: serializer.fromJson<String>(json['mode']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      lastSyncServerMs: serializer.fromJson<int>(json['lastSyncServerMs']),
+      deviceId: serializer.fromJson<String?>(json['deviceId']),
     );
   }
   @override
@@ -2349,6 +3920,8 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
       'apiKey': serializer.toJson<String?>(apiKey),
       'mode': serializer.toJson<String>(mode),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'lastSyncServerMs': serializer.toJson<int>(lastSyncServerMs),
+      'deviceId': serializer.toJson<String?>(deviceId),
     };
   }
 
@@ -2358,7 +3931,9 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
           Value<String?> baseUrl = const Value.absent(),
           Value<String?> apiKey = const Value.absent(),
           String? mode,
-          DateTime? updatedAt}) =>
+          DateTime? updatedAt,
+          int? lastSyncServerMs,
+          Value<String?> deviceId = const Value.absent()}) =>
       SyncSetting(
         id: id ?? this.id,
         useRemote: useRemote ?? this.useRemote,
@@ -2366,6 +3941,8 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
         apiKey: apiKey.present ? apiKey.value : this.apiKey,
         mode: mode ?? this.mode,
         updatedAt: updatedAt ?? this.updatedAt,
+        lastSyncServerMs: lastSyncServerMs ?? this.lastSyncServerMs,
+        deviceId: deviceId.present ? deviceId.value : this.deviceId,
       );
   SyncSetting copyWithCompanion(SyncSettingsCompanion data) {
     return SyncSetting(
@@ -2375,6 +3952,10 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
       apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
       mode: data.mode.present ? data.mode.value : this.mode,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      lastSyncServerMs: data.lastSyncServerMs.present
+          ? data.lastSyncServerMs.value
+          : this.lastSyncServerMs,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
     );
   }
 
@@ -2386,14 +3967,16 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
           ..write('mode: $mode, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastSyncServerMs: $lastSyncServerMs, ')
+          ..write('deviceId: $deviceId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, useRemote, baseUrl, apiKey, mode, updatedAt);
+  int get hashCode => Object.hash(id, useRemote, baseUrl, apiKey, mode,
+      updatedAt, lastSyncServerMs, deviceId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2403,7 +3986,9 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
           other.baseUrl == this.baseUrl &&
           other.apiKey == this.apiKey &&
           other.mode == this.mode &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.lastSyncServerMs == this.lastSyncServerMs &&
+          other.deviceId == this.deviceId);
 }
 
 class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
@@ -2413,6 +3998,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   final Value<String?> apiKey;
   final Value<String> mode;
   final Value<DateTime> updatedAt;
+  final Value<int> lastSyncServerMs;
+  final Value<String?> deviceId;
   const SyncSettingsCompanion({
     this.id = const Value.absent(),
     this.useRemote = const Value.absent(),
@@ -2420,6 +4007,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
     this.apiKey = const Value.absent(),
     this.mode = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.lastSyncServerMs = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   SyncSettingsCompanion.insert({
     this.id = const Value.absent(),
@@ -2428,6 +4017,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
     this.apiKey = const Value.absent(),
     this.mode = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.lastSyncServerMs = const Value.absent(),
+    this.deviceId = const Value.absent(),
   });
   static Insertable<SyncSetting> custom({
     Expression<int>? id,
@@ -2436,6 +4027,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
     Expression<String>? apiKey,
     Expression<String>? mode,
     Expression<DateTime>? updatedAt,
+    Expression<int>? lastSyncServerMs,
+    Expression<String>? deviceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2444,6 +4037,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
       if (apiKey != null) 'api_key': apiKey,
       if (mode != null) 'mode': mode,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (lastSyncServerMs != null) 'last_sync_server_ms': lastSyncServerMs,
+      if (deviceId != null) 'device_id': deviceId,
     });
   }
 
@@ -2453,7 +4048,9 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
       Value<String?>? baseUrl,
       Value<String?>? apiKey,
       Value<String>? mode,
-      Value<DateTime>? updatedAt}) {
+      Value<DateTime>? updatedAt,
+      Value<int>? lastSyncServerMs,
+      Value<String?>? deviceId}) {
     return SyncSettingsCompanion(
       id: id ?? this.id,
       useRemote: useRemote ?? this.useRemote,
@@ -2461,6 +4058,8 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
       apiKey: apiKey ?? this.apiKey,
       mode: mode ?? this.mode,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastSyncServerMs: lastSyncServerMs ?? this.lastSyncServerMs,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -2485,6 +4084,12 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (lastSyncServerMs.present) {
+      map['last_sync_server_ms'] = Variable<int>(lastSyncServerMs.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
     return map;
   }
 
@@ -2496,7 +4101,350 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
           ..write('mode: $mode, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('lastSyncServerMs: $lastSyncServerMs, ')
+          ..write('deviceId: $deviceId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OutboxEntriesTable extends OutboxEntries
+    with TableInfo<$OutboxEntriesTable, OutboxEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OutboxEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _entityTypeMeta =
+      const VerificationMeta('entityType');
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+      'entity_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _entityIdMeta =
+      const VerificationMeta('entityId');
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+      'entity_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _opMeta = const VerificationMeta('op');
+  @override
+  late final GeneratedColumn<String> op = GeneratedColumn<String>(
+      'op', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _payloadJsonMeta =
+      const VerificationMeta('payloadJson');
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+      'payload_json', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _queuedAtMeta =
+      const VerificationMeta('queuedAt');
+  @override
+  late final GeneratedColumn<DateTime> queuedAt = GeneratedColumn<DateTime>(
+      'queued_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, entityType, entityId, op, payloadJson, queuedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'outbox_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<OutboxEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+          _entityTypeMeta,
+          entityType.isAcceptableOrUnknown(
+              data['entity_type']!, _entityTypeMeta));
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(_entityIdMeta,
+          entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta));
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('op')) {
+      context.handle(_opMeta, op.isAcceptableOrUnknown(data['op']!, _opMeta));
+    } else if (isInserting) {
+      context.missing(_opMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+          _payloadJsonMeta,
+          payloadJson.isAcceptableOrUnknown(
+              data['payload_json']!, _payloadJsonMeta));
+    }
+    if (data.containsKey('queued_at')) {
+      context.handle(_queuedAtMeta,
+          queuedAt.isAcceptableOrUnknown(data['queued_at']!, _queuedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OutboxEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OutboxEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      entityType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
+      entityId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}entity_id'])!,
+      op: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}op'])!,
+      payloadJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}payload_json']),
+      queuedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}queued_at'])!,
+    );
+  }
+
+  @override
+  $OutboxEntriesTable createAlias(String alias) {
+    return $OutboxEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
+  final int id;
+  final String entityType;
+  final String entityId;
+  final String op;
+  final String? payloadJson;
+  final DateTime queuedAt;
+  const OutboxEntry(
+      {required this.id,
+      required this.entityType,
+      required this.entityId,
+      required this.op,
+      this.payloadJson,
+      required this.queuedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['entity_type'] = Variable<String>(entityType);
+    map['entity_id'] = Variable<String>(entityId);
+    map['op'] = Variable<String>(op);
+    if (!nullToAbsent || payloadJson != null) {
+      map['payload_json'] = Variable<String>(payloadJson);
+    }
+    map['queued_at'] = Variable<DateTime>(queuedAt);
+    return map;
+  }
+
+  OutboxEntriesCompanion toCompanion(bool nullToAbsent) {
+    return OutboxEntriesCompanion(
+      id: Value(id),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      op: Value(op),
+      payloadJson: payloadJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payloadJson),
+      queuedAt: Value(queuedAt),
+    );
+  }
+
+  factory OutboxEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OutboxEntry(
+      id: serializer.fromJson<int>(json['id']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      op: serializer.fromJson<String>(json['op']),
+      payloadJson: serializer.fromJson<String?>(json['payloadJson']),
+      queuedAt: serializer.fromJson<DateTime>(json['queuedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'entityType': serializer.toJson<String>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'op': serializer.toJson<String>(op),
+      'payloadJson': serializer.toJson<String?>(payloadJson),
+      'queuedAt': serializer.toJson<DateTime>(queuedAt),
+    };
+  }
+
+  OutboxEntry copyWith(
+          {int? id,
+          String? entityType,
+          String? entityId,
+          String? op,
+          Value<String?> payloadJson = const Value.absent(),
+          DateTime? queuedAt}) =>
+      OutboxEntry(
+        id: id ?? this.id,
+        entityType: entityType ?? this.entityType,
+        entityId: entityId ?? this.entityId,
+        op: op ?? this.op,
+        payloadJson: payloadJson.present ? payloadJson.value : this.payloadJson,
+        queuedAt: queuedAt ?? this.queuedAt,
+      );
+  OutboxEntry copyWithCompanion(OutboxEntriesCompanion data) {
+    return OutboxEntry(
+      id: data.id.present ? data.id.value : this.id,
+      entityType:
+          data.entityType.present ? data.entityType.value : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      op: data.op.present ? data.op.value : this.op,
+      payloadJson:
+          data.payloadJson.present ? data.payloadJson.value : this.payloadJson,
+      queuedAt: data.queuedAt.present ? data.queuedAt.value : this.queuedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxEntry(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('op: $op, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('queuedAt: $queuedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, entityType, entityId, op, payloadJson, queuedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OutboxEntry &&
+          other.id == this.id &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.op == this.op &&
+          other.payloadJson == this.payloadJson &&
+          other.queuedAt == this.queuedAt);
+}
+
+class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
+  final Value<int> id;
+  final Value<String> entityType;
+  final Value<String> entityId;
+  final Value<String> op;
+  final Value<String?> payloadJson;
+  final Value<DateTime> queuedAt;
+  const OutboxEntriesCompanion({
+    this.id = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.op = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.queuedAt = const Value.absent(),
+  });
+  OutboxEntriesCompanion.insert({
+    this.id = const Value.absent(),
+    required String entityType,
+    required String entityId,
+    required String op,
+    this.payloadJson = const Value.absent(),
+    this.queuedAt = const Value.absent(),
+  })  : entityType = Value(entityType),
+        entityId = Value(entityId),
+        op = Value(op);
+  static Insertable<OutboxEntry> custom({
+    Expression<int>? id,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<String>? op,
+    Expression<String>? payloadJson,
+    Expression<DateTime>? queuedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (op != null) 'op': op,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (queuedAt != null) 'queued_at': queuedAt,
+    });
+  }
+
+  OutboxEntriesCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? entityType,
+      Value<String>? entityId,
+      Value<String>? op,
+      Value<String?>? payloadJson,
+      Value<DateTime>? queuedAt}) {
+    return OutboxEntriesCompanion(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      op: op ?? this.op,
+      payloadJson: payloadJson ?? this.payloadJson,
+      queuedAt: queuedAt ?? this.queuedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (op.present) {
+      map['op'] = Variable<String>(op.value);
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (queuedAt.present) {
+      map['queued_at'] = Variable<DateTime>(queuedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('op: $op, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('queuedAt: $queuedAt')
           ..write(')'))
         .toString();
   }
@@ -2512,6 +4460,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $IncomeInstancesTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $SyncSettingsTable syncSettings = $SyncSettingsTable(this);
+  late final $OutboxEntriesTable outboxEntries = $OutboxEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2522,31 +4471,46 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         incomeSources,
         incomeInstances,
         categories,
-        syncSettings
+        syncSettings,
+        outboxEntries
       ];
 }
 
 typedef $$BillTemplatesTableCreateCompanionBuilder = BillTemplatesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   required String name,
   Value<String?> category,
+  Value<String?> categoryRemoteId,
   required int defaultAmountCents,
   Value<String?> startDate,
   Value<bool> active,
   Value<String?> recurrenceRule,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 typedef $$BillTemplatesTableUpdateCompanionBuilder = BillTemplatesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<String> name,
   Value<String?> category,
+  Value<String?> categoryRemoteId,
   Value<int> defaultAmountCents,
   Value<String?> startDate,
   Value<bool> active,
   Value<String?> recurrenceRule,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 
 class $$BillTemplatesTableFilterComposer
@@ -2561,11 +4525,21 @@ class $$BillTemplatesTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get defaultAmountCents => $composableBuilder(
       column: $table.defaultAmountCents,
@@ -2583,6 +4557,21 @@ class $$BillTemplatesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$BillTemplatesTableOrderingComposer
@@ -2597,11 +4586,21 @@ class $$BillTemplatesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<int> get defaultAmountCents => $composableBuilder(
       column: $table.defaultAmountCents,
@@ -2619,6 +4618,21 @@ class $$BillTemplatesTableOrderingComposer
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$BillTemplatesTableAnnotationComposer
@@ -2633,11 +4647,20 @@ class $$BillTemplatesTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => column);
+
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId, builder: (column) => column);
 
   GeneratedColumn<int> get defaultAmountCents => $composableBuilder(
       column: $table.defaultAmountCents, builder: (column) => column);
@@ -2653,6 +4676,18 @@ class $$BillTemplatesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
 }
 
 class $$BillTemplatesTableTableManager extends RootTableManager<
@@ -2682,43 +4717,71 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
               $$BillTemplatesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String?> category = const Value.absent(),
+            Value<String?> categoryRemoteId = const Value.absent(),
             Value<int> defaultAmountCents = const Value.absent(),
             Value<String?> startDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<String?> recurrenceRule = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               BillTemplatesCompanion(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             category: category,
+            categoryRemoteId: categoryRemoteId,
             defaultAmountCents: defaultAmountCents,
             startDate: startDate,
             active: active,
             recurrenceRule: recurrenceRule,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             required String name,
             Value<String?> category = const Value.absent(),
+            Value<String?> categoryRemoteId = const Value.absent(),
             required int defaultAmountCents,
             Value<String?> startDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<String?> recurrenceRule = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               BillTemplatesCompanion.insert(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             category: category,
+            categoryRemoteId: categoryRemoteId,
             defaultAmountCents: defaultAmountCents,
             startDate: startDate,
             active: active,
             recurrenceRule: recurrenceRule,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2745,7 +4808,10 @@ typedef $$BillTemplatesTableProcessedTableManager = ProcessedTableManager<
 typedef $$BillInstancesTableCreateCompanionBuilder = BillInstancesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<int?> templateId,
+  Value<String?> templateRemoteId,
   required String titleSnapshot,
   required int amountCents,
   required String dueDate,
@@ -2754,12 +4820,20 @@ typedef $$BillInstancesTableCreateCompanionBuilder = BillInstancesCompanion
   Value<DateTime?> paidAt,
   Value<String?> notes,
   Value<String?> category,
+  Value<String?> categoryRemoteId,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 typedef $$BillInstancesTableUpdateCompanionBuilder = BillInstancesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<int?> templateId,
+  Value<String?> templateRemoteId,
   Value<String> titleSnapshot,
   Value<int> amountCents,
   Value<String> dueDate,
@@ -2768,7 +4842,12 @@ typedef $$BillInstancesTableUpdateCompanionBuilder = BillInstancesCompanion
   Value<DateTime?> paidAt,
   Value<String?> notes,
   Value<String?> category,
+  Value<String?> categoryRemoteId,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 
 class $$BillInstancesTableFilterComposer
@@ -2783,8 +4862,18 @@ class $$BillInstancesTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<int> get templateId => $composableBuilder(
       column: $table.templateId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get templateRemoteId => $composableBuilder(
+      column: $table.templateRemoteId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot, builder: (column) => ColumnFilters(column));
@@ -2811,8 +4900,27 @@ class $$BillInstancesTableFilterComposer
   ColumnFilters<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId,
+      builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$BillInstancesTableOrderingComposer
@@ -2827,8 +4935,18 @@ class $$BillInstancesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get templateId => $composableBuilder(
       column: $table.templateId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get templateRemoteId => $composableBuilder(
+      column: $table.templateRemoteId,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot,
@@ -2856,8 +4974,27 @@ class $$BillInstancesTableOrderingComposer
   ColumnOrderings<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$BillInstancesTableAnnotationComposer
@@ -2872,8 +5009,17 @@ class $$BillInstancesTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => column);
+
   GeneratedColumn<int> get templateId => $composableBuilder(
       column: $table.templateId, builder: (column) => column);
+
+  GeneratedColumn<String> get templateRemoteId => $composableBuilder(
+      column: $table.templateRemoteId, builder: (column) => column);
 
   GeneratedColumn<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot, builder: (column) => column);
@@ -2899,8 +5045,23 @@ class $$BillInstancesTableAnnotationComposer
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
+  GeneratedColumn<String> get categoryRemoteId => $composableBuilder(
+      column: $table.categoryRemoteId, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
 }
 
 class $$BillInstancesTableTableManager extends RootTableManager<
@@ -2930,7 +5091,10 @@ class $$BillInstancesTableTableManager extends RootTableManager<
               $$BillInstancesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<int?> templateId = const Value.absent(),
+            Value<String?> templateRemoteId = const Value.absent(),
             Value<String> titleSnapshot = const Value.absent(),
             Value<int> amountCents = const Value.absent(),
             Value<String> dueDate = const Value.absent(),
@@ -2939,11 +5103,19 @@ class $$BillInstancesTableTableManager extends RootTableManager<
             Value<DateTime?> paidAt = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> category = const Value.absent(),
+            Value<String?> categoryRemoteId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               BillInstancesCompanion(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             templateId: templateId,
+            templateRemoteId: templateRemoteId,
             titleSnapshot: titleSnapshot,
             amountCents: amountCents,
             dueDate: dueDate,
@@ -2952,11 +5124,19 @@ class $$BillInstancesTableTableManager extends RootTableManager<
             paidAt: paidAt,
             notes: notes,
             category: category,
+            categoryRemoteId: categoryRemoteId,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<int?> templateId = const Value.absent(),
+            Value<String?> templateRemoteId = const Value.absent(),
             required String titleSnapshot,
             required int amountCents,
             required String dueDate,
@@ -2965,11 +5145,19 @@ class $$BillInstancesTableTableManager extends RootTableManager<
             Value<DateTime?> paidAt = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<String?> category = const Value.absent(),
+            Value<String?> categoryRemoteId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               BillInstancesCompanion.insert(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             templateId: templateId,
+            templateRemoteId: templateRemoteId,
             titleSnapshot: titleSnapshot,
             amountCents: amountCents,
             dueDate: dueDate,
@@ -2978,7 +5166,12 @@ class $$BillInstancesTableTableManager extends RootTableManager<
             paidAt: paidAt,
             notes: notes,
             category: category,
+            categoryRemoteId: categoryRemoteId,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3005,6 +5198,8 @@ typedef $$BillInstancesTableProcessedTableManager = ProcessedTableManager<
 typedef $$IncomeSourcesTableCreateCompanionBuilder = IncomeSourcesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   required String name,
   required int amountCents,
   required String frequency,
@@ -3012,10 +5207,16 @@ typedef $$IncomeSourcesTableCreateCompanionBuilder = IncomeSourcesCompanion
   Value<String?> anchorDate,
   Value<bool> active,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 typedef $$IncomeSourcesTableUpdateCompanionBuilder = IncomeSourcesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<String> name,
   Value<int> amountCents,
   Value<String> frequency,
@@ -3023,6 +5224,10 @@ typedef $$IncomeSourcesTableUpdateCompanionBuilder = IncomeSourcesCompanion
   Value<String?> anchorDate,
   Value<bool> active,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 
 class $$IncomeSourcesTableFilterComposer
@@ -3036,6 +5241,12 @@ class $$IncomeSourcesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
@@ -3057,6 +5268,21 @@ class $$IncomeSourcesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$IncomeSourcesTableOrderingComposer
@@ -3070,6 +5296,12 @@ class $$IncomeSourcesTableOrderingComposer
   });
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
@@ -3091,6 +5323,21 @@ class $$IncomeSourcesTableOrderingComposer
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$IncomeSourcesTableAnnotationComposer
@@ -3104,6 +5351,12 @@ class $$IncomeSourcesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => column);
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
@@ -3125,6 +5378,18 @@ class $$IncomeSourcesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
 }
 
 class $$IncomeSourcesTableTableManager extends RootTableManager<
@@ -3154,6 +5419,8 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
               $$IncomeSourcesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<int> amountCents = const Value.absent(),
             Value<String> frequency = const Value.absent(),
@@ -3161,9 +5428,15 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             Value<String?> anchorDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               IncomeSourcesCompanion(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             amountCents: amountCents,
             frequency: frequency,
@@ -3171,9 +5444,15 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             anchorDate: anchorDate,
             active: active,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             required String name,
             required int amountCents,
             required String frequency,
@@ -3181,9 +5460,15 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             Value<String?> anchorDate = const Value.absent(),
             Value<bool> active = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               IncomeSourcesCompanion.insert(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             amountCents: amountCents,
             frequency: frequency,
@@ -3191,6 +5476,10 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
             anchorDate: anchorDate,
             active: active,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3217,7 +5506,10 @@ typedef $$IncomeSourcesTableProcessedTableManager = ProcessedTableManager<
 typedef $$IncomeInstancesTableCreateCompanionBuilder = IncomeInstancesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<int?> sourceId,
+  Value<String?> sourceRemoteId,
   required String titleSnapshot,
   required int amountCents,
   required String date,
@@ -3225,11 +5517,18 @@ typedef $$IncomeInstancesTableCreateCompanionBuilder = IncomeInstancesCompanion
   Value<DateTime?> receivedAt,
   Value<String?> notes,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 typedef $$IncomeInstancesTableUpdateCompanionBuilder = IncomeInstancesCompanion
     Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<int?> sourceId,
+  Value<String?> sourceRemoteId,
   Value<String> titleSnapshot,
   Value<int> amountCents,
   Value<String> date,
@@ -3237,6 +5536,10 @@ typedef $$IncomeInstancesTableUpdateCompanionBuilder = IncomeInstancesCompanion
   Value<DateTime?> receivedAt,
   Value<String?> notes,
   Value<DateTime> createdAt,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 
 class $$IncomeInstancesTableFilterComposer
@@ -3251,8 +5554,18 @@ class $$IncomeInstancesTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<int> get sourceId => $composableBuilder(
       column: $table.sourceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sourceRemoteId => $composableBuilder(
+      column: $table.sourceRemoteId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot, builder: (column) => ColumnFilters(column));
@@ -3274,6 +5587,21 @@ class $$IncomeInstancesTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$IncomeInstancesTableOrderingComposer
@@ -3288,8 +5616,18 @@ class $$IncomeInstancesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get sourceId => $composableBuilder(
       column: $table.sourceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sourceRemoteId => $composableBuilder(
+      column: $table.sourceRemoteId,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot,
@@ -3312,6 +5650,21 @@ class $$IncomeInstancesTableOrderingComposer
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$IncomeInstancesTableAnnotationComposer
@@ -3326,8 +5679,17 @@ class $$IncomeInstancesTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => column);
+
   GeneratedColumn<int> get sourceId =>
       $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceRemoteId => $composableBuilder(
+      column: $table.sourceRemoteId, builder: (column) => column);
 
   GeneratedColumn<String> get titleSnapshot => $composableBuilder(
       column: $table.titleSnapshot, builder: (column) => column);
@@ -3349,6 +5711,18 @@ class $$IncomeInstancesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
 }
 
 class $$IncomeInstancesTableTableManager extends RootTableManager<
@@ -3379,7 +5753,10 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
               $$IncomeInstancesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<int?> sourceId = const Value.absent(),
+            Value<String?> sourceRemoteId = const Value.absent(),
             Value<String> titleSnapshot = const Value.absent(),
             Value<int> amountCents = const Value.absent(),
             Value<String> date = const Value.absent(),
@@ -3387,10 +5764,17 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
             Value<DateTime?> receivedAt = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               IncomeInstancesCompanion(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             sourceId: sourceId,
+            sourceRemoteId: sourceRemoteId,
             titleSnapshot: titleSnapshot,
             amountCents: amountCents,
             date: date,
@@ -3398,10 +5782,17 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
             receivedAt: receivedAt,
             notes: notes,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<int?> sourceId = const Value.absent(),
+            Value<String?> sourceRemoteId = const Value.absent(),
             required String titleSnapshot,
             required int amountCents,
             required String date,
@@ -3409,10 +5800,17 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
             Value<DateTime?> receivedAt = const Value.absent(),
             Value<String?> notes = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               IncomeInstancesCompanion.insert(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             sourceId: sourceId,
+            sourceRemoteId: sourceRemoteId,
             titleSnapshot: titleSnapshot,
             amountCents: amountCents,
             date: date,
@@ -3420,6 +5818,10 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
             receivedAt: receivedAt,
             notes: notes,
             createdAt: createdAt,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3445,17 +5847,29 @@ typedef $$IncomeInstancesTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   required String name,
   Value<String?> color,
   Value<String?> icon,
   Value<int> sortOrder,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 typedef $$CategoriesTableUpdateCompanionBuilder = CategoriesCompanion Function({
   Value<int> id,
+  Value<String?> remoteId,
+  Value<String?> householdId,
   Value<String> name,
   Value<String?> color,
   Value<String?> icon,
   Value<int> sortOrder,
+  Value<int?> updatedAtServer,
+  Value<int?> deletedAtServer,
+  Value<String?> deviceId,
+  Value<int?> clientUpdatedAt,
 });
 
 class $$CategoriesTableFilterComposer
@@ -3470,6 +5884,12 @@ class $$CategoriesTableFilterComposer
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnFilters(column));
 
@@ -3481,6 +5901,21 @@ class $$CategoriesTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
       column: $table.sortOrder, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$CategoriesTableOrderingComposer
@@ -3495,6 +5930,12 @@ class $$CategoriesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteId => $composableBuilder(
+      column: $table.remoteId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get name => $composableBuilder(
       column: $table.name, builder: (column) => ColumnOrderings(column));
 
@@ -3506,6 +5947,21 @@ class $$CategoriesTableOrderingComposer
 
   ColumnOrderings<int> get sortOrder => $composableBuilder(
       column: $table.sortOrder, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$CategoriesTableAnnotationComposer
@@ -3520,6 +5976,12 @@ class $$CategoriesTableAnnotationComposer
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteId =>
+      $composableBuilder(column: $table.remoteId, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+      column: $table.householdId, builder: (column) => column);
+
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
@@ -3531,6 +5993,18 @@ class $$CategoriesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtServer => $composableBuilder(
+      column: $table.updatedAtServer, builder: (column) => column);
+
+  GeneratedColumn<int> get deletedAtServer => $composableBuilder(
+      column: $table.deletedAtServer, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<int> get clientUpdatedAt => $composableBuilder(
+      column: $table.clientUpdatedAt, builder: (column) => column);
 }
 
 class $$CategoriesTableTableManager extends RootTableManager<
@@ -3557,31 +6031,55 @@ class $$CategoriesTableTableManager extends RootTableManager<
               $$CategoriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
             Value<String?> color = const Value.absent(),
             Value<String?> icon = const Value.absent(),
             Value<int> sortOrder = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               CategoriesCompanion(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             color: color,
             icon: icon,
             sortOrder: sortOrder,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String?> remoteId = const Value.absent(),
+            Value<String?> householdId = const Value.absent(),
             required String name,
             Value<String?> color = const Value.absent(),
             Value<String?> icon = const Value.absent(),
             Value<int> sortOrder = const Value.absent(),
+            Value<int?> updatedAtServer = const Value.absent(),
+            Value<int?> deletedAtServer = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
+            Value<int?> clientUpdatedAt = const Value.absent(),
           }) =>
               CategoriesCompanion.insert(
             id: id,
+            remoteId: remoteId,
+            householdId: householdId,
             name: name,
             color: color,
             icon: icon,
             sortOrder: sortOrder,
+            updatedAtServer: updatedAtServer,
+            deletedAtServer: deletedAtServer,
+            deviceId: deviceId,
+            clientUpdatedAt: clientUpdatedAt,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3610,6 +6108,8 @@ typedef $$SyncSettingsTableCreateCompanionBuilder = SyncSettingsCompanion
   Value<String?> apiKey,
   Value<String> mode,
   Value<DateTime> updatedAt,
+  Value<int> lastSyncServerMs,
+  Value<String?> deviceId,
 });
 typedef $$SyncSettingsTableUpdateCompanionBuilder = SyncSettingsCompanion
     Function({
@@ -3619,6 +6119,8 @@ typedef $$SyncSettingsTableUpdateCompanionBuilder = SyncSettingsCompanion
   Value<String?> apiKey,
   Value<String> mode,
   Value<DateTime> updatedAt,
+  Value<int> lastSyncServerMs,
+  Value<String?> deviceId,
 });
 
 class $$SyncSettingsTableFilterComposer
@@ -3647,6 +6149,13 @@ class $$SyncSettingsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lastSyncServerMs => $composableBuilder(
+      column: $table.lastSyncServerMs,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnFilters(column));
 }
 
 class $$SyncSettingsTableOrderingComposer
@@ -3675,6 +6184,13 @@ class $$SyncSettingsTableOrderingComposer
 
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lastSyncServerMs => $composableBuilder(
+      column: $table.lastSyncServerMs,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+      column: $table.deviceId, builder: (column) => ColumnOrderings(column));
 }
 
 class $$SyncSettingsTableAnnotationComposer
@@ -3703,6 +6219,12 @@ class $$SyncSettingsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get lastSyncServerMs => $composableBuilder(
+      column: $table.lastSyncServerMs, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
 }
 
 class $$SyncSettingsTableTableManager extends RootTableManager<
@@ -3737,6 +6259,8 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
             Value<String?> apiKey = const Value.absent(),
             Value<String> mode = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> lastSyncServerMs = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
           }) =>
               SyncSettingsCompanion(
             id: id,
@@ -3745,6 +6269,8 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
             apiKey: apiKey,
             mode: mode,
             updatedAt: updatedAt,
+            lastSyncServerMs: lastSyncServerMs,
+            deviceId: deviceId,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -3753,6 +6279,8 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
             Value<String?> apiKey = const Value.absent(),
             Value<String> mode = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> lastSyncServerMs = const Value.absent(),
+            Value<String?> deviceId = const Value.absent(),
           }) =>
               SyncSettingsCompanion.insert(
             id: id,
@@ -3761,6 +6289,8 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
             apiKey: apiKey,
             mode: mode,
             updatedAt: updatedAt,
+            lastSyncServerMs: lastSyncServerMs,
+            deviceId: deviceId,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -3784,6 +6314,188 @@ typedef $$SyncSettingsTableProcessedTableManager = ProcessedTableManager<
     ),
     SyncSetting,
     PrefetchHooks Function()>;
+typedef $$OutboxEntriesTableCreateCompanionBuilder = OutboxEntriesCompanion
+    Function({
+  Value<int> id,
+  required String entityType,
+  required String entityId,
+  required String op,
+  Value<String?> payloadJson,
+  Value<DateTime> queuedAt,
+});
+typedef $$OutboxEntriesTableUpdateCompanionBuilder = OutboxEntriesCompanion
+    Function({
+  Value<int> id,
+  Value<String> entityType,
+  Value<String> entityId,
+  Value<String> op,
+  Value<String?> payloadJson,
+  Value<DateTime> queuedAt,
+});
+
+class $$OutboxEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
+  $$OutboxEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get op => $composableBuilder(
+      column: $table.op, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get queuedAt => $composableBuilder(
+      column: $table.queuedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$OutboxEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
+  $$OutboxEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+      column: $table.entityId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get op => $composableBuilder(
+      column: $table.op, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get queuedAt => $composableBuilder(
+      column: $table.queuedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$OutboxEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OutboxEntriesTable> {
+  $$OutboxEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+      column: $table.entityType, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get op =>
+      $composableBuilder(column: $table.op, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+      column: $table.payloadJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get queuedAt =>
+      $composableBuilder(column: $table.queuedAt, builder: (column) => column);
+}
+
+class $$OutboxEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $OutboxEntriesTable,
+    OutboxEntry,
+    $$OutboxEntriesTableFilterComposer,
+    $$OutboxEntriesTableOrderingComposer,
+    $$OutboxEntriesTableAnnotationComposer,
+    $$OutboxEntriesTableCreateCompanionBuilder,
+    $$OutboxEntriesTableUpdateCompanionBuilder,
+    (
+      OutboxEntry,
+      BaseReferences<_$AppDatabase, $OutboxEntriesTable, OutboxEntry>
+    ),
+    OutboxEntry,
+    PrefetchHooks Function()> {
+  $$OutboxEntriesTableTableManager(_$AppDatabase db, $OutboxEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OutboxEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OutboxEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OutboxEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> entityType = const Value.absent(),
+            Value<String> entityId = const Value.absent(),
+            Value<String> op = const Value.absent(),
+            Value<String?> payloadJson = const Value.absent(),
+            Value<DateTime> queuedAt = const Value.absent(),
+          }) =>
+              OutboxEntriesCompanion(
+            id: id,
+            entityType: entityType,
+            entityId: entityId,
+            op: op,
+            payloadJson: payloadJson,
+            queuedAt: queuedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String entityType,
+            required String entityId,
+            required String op,
+            Value<String?> payloadJson = const Value.absent(),
+            Value<DateTime> queuedAt = const Value.absent(),
+          }) =>
+              OutboxEntriesCompanion.insert(
+            id: id,
+            entityType: entityType,
+            entityId: entityId,
+            op: op,
+            payloadJson: payloadJson,
+            queuedAt: queuedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$OutboxEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $OutboxEntriesTable,
+    OutboxEntry,
+    $$OutboxEntriesTableFilterComposer,
+    $$OutboxEntriesTableOrderingComposer,
+    $$OutboxEntriesTableAnnotationComposer,
+    $$OutboxEntriesTableCreateCompanionBuilder,
+    $$OutboxEntriesTableUpdateCompanionBuilder,
+    (
+      OutboxEntry,
+      BaseReferences<_$AppDatabase, $OutboxEntriesTable, OutboxEntry>
+    ),
+    OutboxEntry,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3800,4 +6512,6 @@ class $AppDatabaseManager {
       $$CategoriesTableTableManager(_db, _db.categories);
   $$SyncSettingsTableTableManager get syncSettings =>
       $$SyncSettingsTableTableManager(_db, _db.syncSettings);
+  $$OutboxEntriesTableTableManager get outboxEntries =>
+      $$OutboxEntriesTableTableManager(_db, _db.outboxEntries);
 }

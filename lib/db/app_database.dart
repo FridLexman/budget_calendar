@@ -8,7 +8,7 @@ part 'app_database.g.dart';
 
 class BillTemplates extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get remoteId => text().nullable()();
   TextColumn get householdId => text().nullable()();
   TextColumn get name => text()();
   TextColumn get category => text().nullable()();
@@ -27,7 +27,7 @@ class BillTemplates extends Table {
 
 class BillInstances extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get remoteId => text().nullable()();
   TextColumn get householdId => text().nullable()();
   IntColumn get templateId => integer().nullable()(); // null for one-time
   TextColumn get templateRemoteId => text().nullable()();
@@ -49,7 +49,7 @@ class BillInstances extends Table {
 
 class IncomeSources extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get remoteId => text().nullable()();
   TextColumn get householdId => text().nullable()();
   TextColumn get name => text()();
   IntColumn get amountCents => integer()();
@@ -66,7 +66,7 @@ class IncomeSources extends Table {
 
 class IncomeInstances extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get remoteId => text().nullable()();
   TextColumn get householdId => text().nullable()();
   IntColumn get sourceId => integer().nullable()(); // null for one-time
   TextColumn get sourceRemoteId => text().nullable()();
@@ -85,7 +85,7 @@ class IncomeInstances extends Table {
 
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get remoteId => text().nullable().unique()();
+  TextColumn get remoteId => text().nullable()();
   TextColumn get householdId => text().nullable()();
   TextColumn get name => text().unique()();
   TextColumn get color => text().nullable()(); // Hex color code
@@ -153,6 +153,7 @@ class AppDatabase extends _$AppDatabase {
           mode: const Value('local_only'),
         ),
       );
+      await _createRemoteIdIndexes(m);
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) {
@@ -211,6 +212,10 @@ class AppDatabase extends _$AppDatabase {
 
         await m.addColumn(syncSettings, syncSettings.lastSyncServerMs);
         await m.addColumn(syncSettings, syncSettings.deviceId);
+
+        // Backfill remote IDs for existing rows.
+        await ensureRemoteIdsForAll();
+        await _createRemoteIdIndexes(m);
       }
     },
   );
@@ -253,6 +258,15 @@ class AppDatabase extends _$AppDatabase {
         await (update(incomeInstances)..where((b) => b.id.equals(t.id))).write(IncomeInstancesCompanion(remoteId: Value(id)));
       }
     });
+  }
+
+  Future<void> _createRemoteIdIndexes(Migrator m) async {
+    // Use partial unique indexes to avoid conflicts with NULL values.
+    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_remote_id ON categories(remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_templates_remote_id ON bill_templates(remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_instances_remote_id ON bill_instances(remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_income_sources_remote_id ON income_sources(remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_income_instances_remote_id ON income_instances(remote_id) WHERE remote_id IS NOT NULL;');
   }
 
   Future<String> ensureDeviceId(String? existing) async {
