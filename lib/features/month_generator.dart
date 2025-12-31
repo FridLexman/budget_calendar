@@ -7,6 +7,13 @@ class MonthGenerator {
   MonthGenerator(this.db);
 
   Future<void> ensureMonthGenerated(int year, int month) async {
+    // Avoid generating unbounded history/future to keep the DB from filling forever
+    final target = DateTime(year, month, 1);
+    final now = DateTime.now();
+    final min = DateTime(now.year, now.month - 3, 1); // generate up to 3 months back
+    final max = DateTime(now.year, now.month + 15, 1); // and 15 months ahead
+    if (target.isBefore(min) || target.isAfter(max)) return;
+
     await _generateBillInstances(year, month);
     await _generateIncomeInstances(year, month);
   }

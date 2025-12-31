@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 import '../db/app_database.dart';
+import 'month_generator.dart';
 
 class SyncResult {
   final bool ok;
@@ -116,6 +117,8 @@ class SyncService {
       final serverNow = body['server_now'] as int? ?? DateTime.now().millisecondsSinceEpoch;
       final changes = body['changes'] as Map<String, dynamic>? ?? {};
       await _applyChanges(changes);
+      // Generate near-term months so new templates/sources create instances locally
+      await MonthGenerator(db).ensureCurrentAndNextMonthGenerated();
       await db.saveSyncSettings(
         useRemote: settings.useRemote,
         mode: settings.mode,
