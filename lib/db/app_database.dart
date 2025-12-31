@@ -481,17 +481,21 @@ class AppDatabase extends _$AppDatabase {
     String? category,
   }) {
     final uuid = const Uuid().v4();
-    return into(billInstances).insert(
-      BillInstancesCompanion(
-        remoteId: Value(uuid),
-        templateId: const Value(null),
-        titleSnapshot: Value(title),
-        amountCents: Value(amountCents),
-        dueDate: Value(dueDate),
-        notes: Value(notes),
-        category: Value(category),
-      ),
-    );
+    return transaction(() async {
+      final id = await into(billInstances).insert(
+        BillInstancesCompanion(
+          remoteId: Value(uuid),
+          templateId: const Value(null),
+          titleSnapshot: Value(title),
+          amountCents: Value(amountCents),
+          dueDate: Value(dueDate),
+          notes: Value(notes),
+          category: Value(category),
+        ),
+      );
+      await enqueueOutbox(entityType: 'bill_instances', entityId: uuid, op: 'upsert');
+      return id;
+    });
   }
 
   Future<int> addRecurringBillInstance({
@@ -502,22 +506,27 @@ class AppDatabase extends _$AppDatabase {
     String? category,
   }) {
     final uuid = const Uuid().v4();
-    return into(billInstances).insert(
-      BillInstancesCompanion(
-        remoteId: Value(uuid),
-        templateId: Value(templateId),
-        titleSnapshot: Value(title),
-        amountCents: Value(amountCents),
-        dueDate: Value(dueDate),
-        category: Value(category),
-      ),
-    );
+    return transaction(() async {
+      final id = await into(billInstances).insert(
+        BillInstancesCompanion(
+          remoteId: Value(uuid),
+          templateId: Value(templateId),
+          titleSnapshot: Value(title),
+          amountCents: Value(amountCents),
+          dueDate: Value(dueDate),
+          category: Value(category),
+        ),
+      );
+      await enqueueOutbox(entityType: 'bill_instances', entityId: uuid, op: 'upsert');
+      return id;
+    });
   }
 
   Future<void> markBillPaid({
     required int instanceId,
     required int paidAmountCents,
   }) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       BillInstancesCompanion(
         status: const Value('paid'),
@@ -525,12 +534,16 @@ class AppDatabase extends _$AppDatabase {
         paidAt: Value(DateTime.now()),
       ),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> markBillPartialPaid({
     required int instanceId,
     required int paidAmountCents,
   }) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       BillInstancesCompanion(
         status: const Value('partial'),
@@ -538,9 +551,13 @@ class AppDatabase extends _$AppDatabase {
         paidAt: Value(DateTime.now()),
       ),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> markBillUnpaid({required int instanceId}) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       const BillInstancesCompanion(
         status: Value('scheduled'),
@@ -548,36 +565,55 @@ class AppDatabase extends _$AppDatabase {
         paidAt: Value(null),
       ),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> skipBillInstance({required int instanceId}) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       const BillInstancesCompanion(status: Value('skipped')),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> unskipBillInstance({required int instanceId}) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       const BillInstancesCompanion(status: Value('scheduled')),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> updateBillInstanceAmount({
     required int instanceId,
     required int amountCents,
   }) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       BillInstancesCompanion(amountCents: Value(amountCents)),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> updateBillInstanceNotes({
     required int instanceId,
     String? notes,
   }) async {
+    final row = await (select(billInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(billInstances)..where((i) => i.id.equals(instanceId))).write(
       BillInstancesCompanion(notes: Value(notes)),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> deleteBillInstance(int id) async {
@@ -672,16 +708,20 @@ class AppDatabase extends _$AppDatabase {
     String? notes,
   }) {
     final uuid = const Uuid().v4();
-    return into(incomeInstances).insert(
-      IncomeInstancesCompanion(
-        remoteId: Value(uuid),
-        sourceId: const Value(null),
-        titleSnapshot: Value(title),
-        amountCents: Value(amountCents),
-        date: Value(date),
-        notes: Value(notes),
-      ),
-    );
+    return transaction(() async {
+      final id = await into(incomeInstances).insert(
+        IncomeInstancesCompanion(
+          remoteId: Value(uuid),
+          sourceId: const Value(null),
+          titleSnapshot: Value(title),
+          amountCents: Value(amountCents),
+          date: Value(date),
+          notes: Value(notes),
+        ),
+      );
+      await enqueueOutbox(entityType: 'income_instances', entityId: uuid, op: 'upsert');
+      return id;
+    });
   }
 
   Future<int> addRecurringIncomeInstance({
@@ -691,48 +731,68 @@ class AppDatabase extends _$AppDatabase {
     required String date,
   }) {
     final uuid = const Uuid().v4();
-    return into(incomeInstances).insert(
-      IncomeInstancesCompanion(
-        remoteId: Value(uuid),
-        sourceId: Value(sourceId),
-        titleSnapshot: Value(title),
-        amountCents: Value(amountCents),
-        date: Value(date),
-      ),
-    );
+    return transaction(() async {
+      final id = await into(incomeInstances).insert(
+        IncomeInstancesCompanion(
+          remoteId: Value(uuid),
+          sourceId: Value(sourceId),
+          titleSnapshot: Value(title),
+          amountCents: Value(amountCents),
+          date: Value(date),
+        ),
+      );
+      await enqueueOutbox(entityType: 'income_instances', entityId: uuid, op: 'upsert');
+      return id;
+    });
   }
 
   Future<void> markIncomeReceived({required int instanceId}) async {
+    final row = await (select(incomeInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(incomeInstances)..where((i) => i.id.equals(instanceId))).write(
       IncomeInstancesCompanion(
         status: const Value('received'),
         receivedAt: Value(DateTime.now()),
       ),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> markIncomeExpected({required int instanceId}) async {
+    final row = await (select(incomeInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(incomeInstances)..where((i) => i.id.equals(instanceId))).write(
       const IncomeInstancesCompanion(
         status: Value('expected'),
         receivedAt: Value(null),
       ),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> skipIncomeInstance({required int instanceId}) async {
+    final row = await (select(incomeInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(incomeInstances)..where((i) => i.id.equals(instanceId))).write(
       const IncomeInstancesCompanion(status: Value('skipped')),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> updateIncomeInstanceAmount({
     required int instanceId,
     required int amountCents,
   }) async {
+    final row = await (select(incomeInstances)..where((i) => i.id.equals(instanceId))).getSingleOrNull();
     await (update(incomeInstances)..where((i) => i.id.equals(instanceId))).write(
       IncomeInstancesCompanion(amountCents: Value(amountCents)),
     );
+    if (row?.remoteId != null) {
+      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+    }
   }
 
   Future<void> deleteIncomeInstance(int id) async {

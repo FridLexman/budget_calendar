@@ -288,11 +288,14 @@ class SyncService {
           await (db.delete(db.billTemplates)..where((b) => b.remoteId.equals(remoteId))).go();
           continue;
         }
+        final existing = await (db.select(db.billTemplates)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
         final categoryRemote = t['category_id'] as String?;
         final categoryName = categoryRemote == null
             ? null
             : (await (db.select(db.categories)..where((c) => c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
-        final existing = await (db.select(db.billTemplates)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+        final recurrenceRule = t['recurrence_rule'] as String? ?? existing?.recurrenceRule;
+        final active = (t['active'] as bool?) ?? existing?.active ?? true;
+        final createdAt = DateTime.tryParse(t['created_at'] as String? ?? '') ?? existing?.createdAt ?? DateTime.now();
         final companion = BillTemplatesCompanion(
           remoteId: Value(remoteId),
           householdId: Value(t['household_id'] as String?),
@@ -300,10 +303,10 @@ class SyncService {
           categoryRemoteId: Value(categoryRemote),
           category: Value(categoryName),
           defaultAmountCents: Value((t['default_amount_cents'] as num?)?.toInt() ?? 0),
-          startDate: Value(t['start_date'] as String?),
-          active: Value((t['active'] ?? true) == true),
-          recurrenceRule: Value(t['recurrence_rule'] as String?),
-          createdAt: Value(DateTime.tryParse(t['created_at'] as String? ?? '') ?? DateTime.now()),
+          startDate: Value(t['start_date'] as String? ?? existing?.startDate),
+          active: Value(active),
+          recurrenceRule: Value(recurrenceRule),
+          createdAt: Value(createdAt),
           updatedAtServer: Value((t['updated_at_server'] as num?)?.toInt()),
           deletedAtServer: Value((t['deleted_at_server'] as num?)?.toInt()),
           deviceId: Value(t['device_id'] as String?),
@@ -323,6 +326,8 @@ class SyncService {
           await (db.delete(db.billInstances)..where((b) => b.remoteId.equals(remoteId))).go();
           continue;
         }
+        final existing =
+            await (db.select(db.billInstances)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
         final templateRemote = i['template_id'] as String?;
         final templateRow = templateRemote == null
             ? null
@@ -332,7 +337,8 @@ class SyncService {
             ? null
             : (await (db.select(db.categories)..where((c) => c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
 
-        final existing = await (db.select(db.billInstances)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+        final status = i['status'] as String? ?? existing?.status ?? 'scheduled';
+        final createdAt = DateTime.tryParse(i['created_at'] as String? ?? '') ?? existing?.createdAt ?? DateTime.now();
         final companion = BillInstancesCompanion(
           remoteId: Value(remoteId),
           householdId: Value(i['household_id'] as String?),
@@ -341,13 +347,13 @@ class SyncService {
           titleSnapshot: Value(i['title_snapshot'] as String? ?? 'Bill'),
           amountCents: Value((i['amount_cents'] as num?)?.toInt() ?? 0),
           dueDate: Value(i['due_date'] as String? ?? ''),
-          status: Value(i['status'] as String? ?? 'scheduled'),
+          status: Value(status),
           paidAmountCents: Value((i['paid_amount_cents'] as num?)?.toInt()),
           paidAt: Value(DateTime.tryParse(i['paid_at'] as String? ?? '')),
           notes: Value(i['notes'] as String?),
           category: Value(categoryName),
           categoryRemoteId: Value(categoryRemote),
-          createdAt: Value(DateTime.tryParse(i['created_at'] as String? ?? '') ?? DateTime.now()),
+          createdAt: Value(createdAt),
           updatedAtServer: Value((i['updated_at_server'] as num?)?.toInt()),
           deletedAtServer: Value((i['deleted_at_server'] as num?)?.toInt()),
           deviceId: Value(i['device_id'] as String?),
