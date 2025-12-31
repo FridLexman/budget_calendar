@@ -75,9 +75,38 @@ class SyncService {
       _log('Outbox size: ${outbox.length}');
       final upserts = await _buildLocalUpserts();
       final deletes = _buildDeletes(outbox);
+      // Bootstrap references first (categories, templates) to avoid FK errors on instances
+      final bootstrapUpserts = {
+        'categories': upserts['categories'] ?? [],
+        'bill_templates': upserts['bill_templates'] ?? [],
+      };
 
       final pushUri = _resolve('/api/v1/sync/push');
       if (pushUri == null) return const SyncResult(false, 'Invalid URL');
+
+      // Send bootstrap push if needed
+      if ((bootstrapUpserts['categories'] as List).isNotEmpty ||
+          (bootstrapUpserts['bill_templates'] as List).isNotEmpty) {
+        final bootstrapResp = await http
+            .post(
+              pushUri,
+              headers: {
+                'x-api-key': settings.apiKey ?? '',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'device_id': deviceId,
+                'client_now': DateTime.now().millisecondsSinceEpoch,
+                'upserts': bootstrapUpserts,
+                'deletes': {},
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
+        _log('Bootstrap push status: ${bootstrapResp.statusCode}');
+        if (bootstrapResp.statusCode < 200 || bootstrapResp.statusCode >= 300) {
+          return SyncResult(false, 'Push failed ${bootstrapResp.statusCode}: ${bootstrapResp.body}');
+        }
+      }
 
       final pushResp = await http
           .post(
