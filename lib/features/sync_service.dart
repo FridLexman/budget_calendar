@@ -71,6 +71,19 @@ class SyncService {
       final deviceId = await db.ensureDeviceId(settings.deviceId);
       await db.ensureRemoteIdsForAll();
 
+      // Pre-pull to align IDs before pushing (fixes missing refs)
+      final prePullUri = _resolve('/api/v1/sync/changes', {'since': settings.lastSyncServerMs?.toString() ?? '0'});
+      if (prePullUri == null) return const SyncResult(false, 'Invalid URL');
+      final prePullResp = await http
+          .get(prePullUri, headers: {'x-api-key': settings.apiKey ?? ''})
+          .timeout(const Duration(seconds: 15));
+      _log('Pre-pull status: ${prePullResp.statusCode}');
+      if (prePullResp.statusCode >= 200 && prePullResp.statusCode < 300) {
+        final body = jsonDecode(prePullResp.body) as Map<String, dynamic>;
+        final changes = body['changes'] as Map<String, dynamic>? ?? {};
+        await _applyChanges(changes);
+      }
+
       final outbox = await db.getOutboxBatch(limit: 200);
       _log('Outbox size: ${outbox.length}');
       final upserts = await _buildLocalUpserts();
@@ -129,9 +142,8 @@ class SyncService {
       }
       await db.clearOutboxIds(outbox.map((e) => e.id).toList());
 
-      final since = settings.lastSyncServerMs;
       final pullUri = _resolve('/api/v1/sync/changes', {
-        'since': since?.toString() ?? '0',
+        'since': settings.lastSyncServerMs?.toString() ?? '0',
       });
       if (pullUri == null) return const SyncResult(false, 'Invalid URL');
 

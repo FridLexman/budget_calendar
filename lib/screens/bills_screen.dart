@@ -17,7 +17,7 @@ class BillsScreen extends ConsumerWidget {
     return dbAsync.when(
       data: (db) => Scaffold(
         appBar: AppBar(
-          title: const Text('Bill Templates'),
+          title: const Text('Bills'),
           actions: [
             IconButton(
               icon: const Icon(Icons.help_outline),
@@ -86,6 +86,8 @@ class BillsScreen extends ConsumerWidget {
                   ),
                   ...inactiveTemplates.map((t) => _buildTemplateCard(context, db, t)),
                 ],
+                const SizedBox(height: 16),
+                _buildInstancesSection(db),
               ],
             );
           },
@@ -192,6 +194,67 @@ class BillsScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInstancesSection(AppDatabase db) {
+    final now = DateTime.now();
+    final start = ymd(DateTime(now.year, now.month, 1));
+    final end = ymd(DateTime(now.year, now.month + 1, 0));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(
+            'Instances (this month)',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        StreamBuilder<List<BillInstance>>(
+          stream: db.watchBillInstancesForMonth(start, end),
+          builder: (context, snap) {
+            final rows = snap.data ?? [];
+            if (rows.isEmpty) {
+              return const Text('No bill instances for this month.');
+            }
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: rows.length,
+              itemBuilder: (context, idx) {
+                final b = rows[idx];
+                final isPaid = b.status == 'paid';
+                final isPartial = b.status == 'partial';
+                return ListTile(
+                  leading: Icon(
+                    isPaid
+                        ? Icons.check_circle
+                        : isPartial
+                            ? Icons.adjust
+                            : Icons.schedule,
+                    color: isPaid
+                        ? Colors.green
+                        : isPartial
+                            ? Colors.orange
+                            : Colors.grey[600],
+                  ),
+                  title: Text(b.titleSnapshot),
+                  subtitle: Text('${b.dueDate} • ${b.category ?? 'Uncategorized'}'),
+                  trailing: Text(
+                    formatCents(b.amountCents),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isPaid ? Colors.green : null,
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 
