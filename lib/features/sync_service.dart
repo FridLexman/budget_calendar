@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -17,6 +18,10 @@ class SyncService {
   final SyncSetting settings;
   SyncService(this.db, this.settings);
 
+  void _log(String msg) {
+    debugPrint('[SyncService] $msg');
+  }
+
   bool get isRemoteEnabled =>
       settings.useRemote &&
       (settings.baseUrl?.isNotEmpty ?? false) &&
@@ -32,6 +37,7 @@ class SyncService {
   }
 
   Future<SyncResult> testConnection() async {
+    _log('Testing connection');
     final uri = _resolve('/health');
     if (uri == null) {
       return const SyncResult(false, 'Remote sync disabled or invalid URL');
@@ -41,78 +47,90 @@ class SyncService {
           .get(uri, headers: {'x-api-key': settings.apiKey ?? ''})
           .timeout(const Duration(seconds: 8));
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        _log('Health OK');
         return const SyncResult(true, 'Connection OK');
       }
+      _log('Health failed: ${resp.statusCode}');
       return SyncResult(false, 'Server responded ${resp.statusCode}');
     } catch (e) {
+      _log('Health error: $e');
       return SyncResult(false, 'Failed: $e');
     }
   }
 
   Future<SyncResult> syncNow() async {
-    if (!isRemoteEnabled) {
-      return const SyncResult(false, 'Remote sync disabled');
+    _log('Sync start');
+    try {
+      if (!isRemoteEnabled) {
+        return const SyncResult(false, 'Remote sync disabled');
+      }
+      final health = await testConnection();
+      if (!health.ok) return health;
+
+      final deviceId = await db.ensureDeviceId(settings.deviceId);
+      await db.ensureRemoteIdsForAll();
+
+      final outbox = await db.getOutboxBatch(limit: 200);
+      _log('Outbox size: ${outbox.length}');
+      final upserts = await _buildLocalUpserts();
+      final deletes = _buildDeletes(outbox);
+
+      final pushUri = _resolve('/api/v1/sync/push');
+      if (pushUri == null) return const SyncResult(false, 'Invalid URL');
+
+      final pushResp = await http
+          .post(
+            pushUri,
+            headers: {
+              'x-api-key': settings.apiKey ?? '',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'device_id': deviceId,
+              'client_now': DateTime.now().millisecondsSinceEpoch,
+              'upserts': upserts,
+              'deletes': deletes,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
+      _log('Push status: ${pushResp.statusCode}');
+      if (pushResp.statusCode < 200 || pushResp.statusCode >= 300) {
+        return SyncResult(false, 'Push failed ${pushResp.statusCode}: ${pushResp.body}');
+      }
+      await db.clearOutboxIds(outbox.map((e) => e.id).toList());
+
+      final since = settings.lastSyncServerMs;
+      final pullUri = _resolve('/api/v1/sync/changes', {
+        'since': since?.toString() ?? '0',
+      });
+      if (pullUri == null) return const SyncResult(false, 'Invalid URL');
+
+      final pullResp = await http
+          .get(pullUri, headers: {'x-api-key': settings.apiKey ?? ''})
+          .timeout(const Duration(seconds: 20));
+      _log('Pull status: ${pullResp.statusCode}');
+      if (pullResp.statusCode < 200 || pullResp.statusCode >= 300) {
+        return SyncResult(false, 'Pull failed ${pullResp.statusCode}: ${pullResp.body}');
+      }
+      final body = jsonDecode(pullResp.body) as Map<String, dynamic>;
+      final serverNow = body['server_now'] as int? ?? DateTime.now().millisecondsSinceEpoch;
+      final changes = body['changes'] as Map<String, dynamic>? ?? {};
+      await _applyChanges(changes);
+      await db.saveSyncSettings(
+        useRemote: settings.useRemote,
+        mode: settings.mode,
+        baseUrl: settings.baseUrl,
+        apiKey: settings.apiKey,
+        deviceId: deviceId,
+        lastSyncServerMs: serverNow,
+      );
+
+      _log('Sync complete');
+      return const SyncResult(true, 'Sync complete');
+    } catch (e) {
+      _log('Sync error: $e');
+      return SyncResult(false, 'Sync error: $e');
     }
-    final health = await testConnection();
-    if (!health.ok) return health;
-
-    final deviceId = await db.ensureDeviceId(settings.deviceId);
-    await db.ensureRemoteIdsForAll();
-
-    final outbox = await db.getOutboxBatch(limit: 200);
-    final localState = await _buildLocalUpserts();
-    final upserts = localState;
-    final deletes = _buildDeletes(outbox);
-
-    final pushUri = _resolve('/api/v1/sync/push');
-    if (pushUri == null) return const SyncResult(false, 'Invalid URL');
-
-    final pushResp = await http
-        .post(
-          pushUri,
-          headers: {
-            'x-api-key': settings.apiKey ?? '',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'device_id': deviceId,
-            'client_now': DateTime.now().millisecondsSinceEpoch,
-            'upserts': upserts,
-            'deletes': deletes,
-          }),
-        )
-        .timeout(const Duration(seconds: 15));
-    if (pushResp.statusCode < 200 || pushResp.statusCode >= 300) {
-      return SyncResult(false, 'Push failed ${pushResp.statusCode}: ${pushResp.body}');
-    }
-    await db.clearOutboxIds(outbox.map((e) => e.id).toList());
-
-    final since = settings.lastSyncServerMs;
-    final pullUri = _resolve('/api/v1/sync/changes', {
-      'since': since?.toString() ?? '0',
-    });
-    if (pullUri == null) return const SyncResult(false, 'Invalid URL');
-
-    final pullResp = await http
-        .get(pullUri, headers: {'x-api-key': settings.apiKey ?? ''})
-        .timeout(const Duration(seconds: 20));
-    if (pullResp.statusCode < 200 || pullResp.statusCode >= 300) {
-      return SyncResult(false, 'Pull failed ${pullResp.statusCode}: ${pullResp.body}');
-    }
-    final body = jsonDecode(pullResp.body) as Map<String, dynamic>;
-    final serverNow = body['server_now'] as int? ?? DateTime.now().millisecondsSinceEpoch;
-    final changes = body['changes'] as Map<String, dynamic>? ?? {};
-    await _applyChanges(changes);
-    await db.saveSyncSettings(
-      useRemote: settings.useRemote,
-      mode: settings.mode,
-      baseUrl: settings.baseUrl,
-      apiKey: settings.apiKey,
-      deviceId: deviceId,
-      lastSyncServerMs: serverNow,
-    );
-
-    return const SyncResult(true, 'Sync complete');
   }
 
   Map<String, dynamic> _buildDeletes(List<OutboxEntry> outbox) {

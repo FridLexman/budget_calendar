@@ -224,27 +224,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _syncNow() async {
-    final settings = SyncSetting(
-      id: 0,
-      useRemote: _useRemote,
-      baseUrl: _baseUrlCtrl.text.trim(),
-      apiKey: _apiKeyCtrl.text.trim(),
-      mode: _mode,
-      updatedAt: DateTime.now(),
-      lastSyncServerMs: 0,
-      deviceId: null,
-    );
-    final dbAsync = ref.read(appDatabaseProvider);
-    final db = dbAsync.requireValue;
-    final service = SyncService(db, settings);
-    final result = await service.syncNow();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.message),
-        backgroundColor: result.ok ? Colors.green : Colors.orange,
-      ),
-    );
+    try {
+      final settings = SyncSetting(
+        id: 0,
+        useRemote: _useRemote,
+        baseUrl: _baseUrlCtrl.text.trim(),
+        apiKey: _apiKeyCtrl.text.trim(),
+        mode: _mode,
+        updatedAt: DateTime.now(),
+        lastSyncServerMs: 0,
+        deviceId: null,
+      );
+      final dbAsync = ref.read(appDatabaseProvider);
+      final db = dbAsync.requireValue;
+      final service = SyncService(db, settings);
+      final result = await service.syncNow();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.ok ? Colors.green : Colors.orange,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync error: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 }
 
