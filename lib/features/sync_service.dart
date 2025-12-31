@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
@@ -254,7 +254,11 @@ class SyncService {
           continue;
         }
         final name = c['name'] as String? ?? 'Category';
-        final existing = await (db.select(db.categories)..where((t) => t.remoteId.equals(remoteId))).getSingleOrNull();
+        Category? existing =
+            await (db.select(db.categories)..where((t) => t.remoteId.equals(remoteId))).getSingleOrNull();
+        // Fallback: match by name to avoid UNIQUE(name) collisions when remote_id is new
+        existing ??= await (db.select(db.categories)..where((t) => t.name.equals(name))).getSingleOrNull();
+
         final companion = CategoriesCompanion(
           remoteId: Value(remoteId),
           householdId: Value(c['household_id'] as String?),
@@ -270,7 +274,7 @@ class SyncService {
         if (existing == null) {
           await db.into(db.categories).insert(companion);
         } else {
-          await (db.update(db.categories)..where((t) => t.remoteId.equals(remoteId))).write(companion);
+          await (db.update(db.categories)..where((t) => t.id.equals(existing!.id))).write(companion);
         }
       }
 
