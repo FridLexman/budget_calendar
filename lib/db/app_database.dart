@@ -220,6 +220,40 @@ class AppDatabase extends _$AppDatabase {
     },
   );
 
+  Future<void> _seedCategories() async {
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Housing', color: const Value('#4CAF50'), sortOrder: const Value(1), remoteId: const Value('seed-housing')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Utilities', color: const Value('#2196F3'), sortOrder: const Value(2), remoteId: const Value('seed-utilities')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Transportation', color: const Value('#FF9800'), sortOrder: const Value(3), remoteId: const Value('seed-transport')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Insurance', color: const Value('#9C27B0'), sortOrder: const Value(4), remoteId: const Value('seed-insurance')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Subscriptions', color: const Value('#E91E63'), sortOrder: const Value(5), remoteId: const Value('seed-subs')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Food', color: const Value('#795548'), sortOrder: const Value(6), remoteId: const Value('seed-food')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Healthcare', color: const Value('#00BCD4'), sortOrder: const Value(7), remoteId: const Value('seed-health')));
+    await into(categories).insert(CategoriesCompanion.insert(name: 'Other', color: const Value('#607D8B'), sortOrder: const Value(99), remoteId: const Value('seed-other')));
+  }
+
+  Future<void> clearAllData() async {
+    final settings = await ensureSyncSettingsRow();
+    await transaction(() async {
+      await delete(outboxEntries).go();
+      await delete(billInstances).go();
+      await delete(billTemplates).go();
+      await delete(incomeInstances).go();
+      await delete(incomeSources).go();
+      await delete(categories).go();
+
+      await _seedCategories();
+      await ensureRemoteIdsForAll();
+      await saveSyncSettings(
+        useRemote: settings.useRemote,
+        mode: settings.mode,
+        baseUrl: settings.baseUrl,
+        apiKey: settings.apiKey,
+        deviceId: settings.deviceId,
+        lastSyncServerMs: 0,
+      );
+    });
+  }
+
   // ------------ Sync helpers ------------
 
   Future<String> _ensureRemoteId(String? existing) async {

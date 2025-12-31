@@ -165,6 +165,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   'Provide a base URL and API key (QR supported). SQLite remains active for offline use.',
                   style: TextStyle(color: Colors.grey),
                 ),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 12),
+                const Text(
+                  'Danger zone',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+                  onPressed: _confirmClearAllData,
+                  child: const Text('Clear all data'),
+                ),
               ],
             ),
           ),
@@ -251,6 +264,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Sync error: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmClearAllData() async {
+    final first = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Are you sure?'),
+        content: const Text('This will delete all local data. This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Yes')),
+        ],
+      ),
+    );
+    if (first != true || !mounted) return;
+
+    final second = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Really delete everything?'),
+        content: const Text('All local data will be removed and will not return unless re-synced from server.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (second != true || !mounted) return;
+
+    try {
+      final dbAsync = ref.read(appDatabaseProvider);
+      final db = dbAsync.requireValue;
+      await db.clearAllData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All local data cleared'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      ref.refresh(syncSettingsProvider);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to clear data: $e'),
           backgroundColor: Colors.orange,
         ),
       );
