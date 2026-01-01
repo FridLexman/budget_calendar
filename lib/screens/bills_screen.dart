@@ -198,26 +198,22 @@ class BillsScreen extends ConsumerWidget {
   }
 
   Widget _buildInstancesSection(AppDatabase db) {
-    final now = DateTime.now();
-    final start = ymd(DateTime(now.year, now.month, 1));
-    final end = ymd(DateTime(now.year, now.month + 1, 0));
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'Instances (this month)',
+            'Instances (all, latest 100)',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         StreamBuilder<List<BillInstance>>(
-          stream: db.watchBillInstancesForMonth(start, end),
+          stream: db.watchAllBillInstances(),
           builder: (context, snap) {
-            final rows = snap.data ?? [];
+            final rows = (snap.data ?? []).take(100).toList();
             if (rows.isEmpty) {
-              return const Text('No bill instances for this month.');
+              return const Text('No bill instances found in the local database.');
             }
             return ListView.builder(
               shrinkWrap: true,

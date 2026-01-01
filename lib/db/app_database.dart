@@ -495,6 +495,12 @@ class AppDatabase extends _$AppDatabase {
       ..orderBy([(i) => OrderingTerm.asc(i.dueDate)])).get();
   }
 
+  Stream<List<BillInstance>> watchAllBillInstances() {
+    return (select(billInstances)
+          ..orderBy([(i) => OrderingTerm.desc(i.dueDate)]))
+        .watch();
+  }
+
   Stream<List<BillInstance>> watchBillInstancesForMonth(String startDate, String endDate) {
     return (select(billInstances)
       ..where((i) => i.dueDate.isBetweenValues(startDate, endDate))
