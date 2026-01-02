@@ -72,10 +72,26 @@ app.use(requireApiKey);
 
 const TABLES = ['categories', 'bill_templates', 'bill_instances', 'income_sources', 'income_instances'];
 
+class ValidationError extends Error {
+  constructor(message, status = 400) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function parseDate(input) {
   if (!input) return null;
   const d = new Date(input);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function toDateOnly(input) {
+  const d = parseDate(input);
+  if (!d) return null;
+  const yr = d.getUTCFullYear();
+  const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${yr}-${mo}-${day}`;
 }
 
 function normalizeString(input) {
@@ -129,7 +145,7 @@ async function upsertBillTemplates(conn, items, ctx) {
       name,
       normalizeString(b.category_id),
       amount,
-      b.start_date || null,
+      toDateOnly(b.start_date),
       b.active ? 1 : 0,
       normalizeString(b.recurrence_rule),
       parseDate(b.created_at) || new Date(),
@@ -170,7 +186,7 @@ async function upsertBillInstances(conn, items, ctx) {
       normalizeString(b.template_id),
       title,
       amount,
-      b.due_date,
+      toDateOnly(b.due_date),
       normalizeString(b.status || 'scheduled'),
       b.paid_amount_cents ?? null,
       parseDate(b.paid_at),
@@ -218,8 +234,8 @@ async function upsertIncomeSources(conn, items, ctx) {
       name,
       amount,
       frequency,
-      s.start_date || null,
-      s.anchor_date || null,
+      toDateOnly(s.start_date),
+      toDateOnly(s.anchor_date),
       s.active ? 1 : 0,
       parseDate(s.created_at) || new Date(),
       normalizeString(s.device_id || ctx.deviceId),
@@ -259,7 +275,7 @@ async function upsertIncomeInstances(conn, items, ctx) {
       normalizeString(i.source_id),
       title,
       amount,
-      i.date,
+      toDateOnly(i.date),
       normalizeString(i.status || 'expected'),
       parseDate(i.received_at),
       normalizeString(i.notes),
@@ -300,6 +316,39 @@ async function softDelete(conn, table, ids, householdId, serverNow) {
   );
 }
 
+async function ensureRefsExist(conn, householdId, categoryIds = [], templateIds = [], sourceIds = []) {
+  const missing = { categories: [], templates: [], incomeSources: [] };
+
+  if (categoryIds.length) {
+    const [rows] = await conn.query(
+      'SELECT id FROM categories WHERE household_id=? AND id IN (?)',
+      [householdId, categoryIds]
+    );
+    const found = new Set(rows.map((r) => r.id));
+    missing.categories = categoryIds.filter((id) => !found.has(id));
+  }
+
+  if (templateIds.length) {
+    const [rows] = await conn.query(
+      'SELECT id FROM bill_templates WHERE household_id=? AND id IN (?)',
+      [householdId, templateIds]
+    );
+    const found = new Set(rows.map((r) => r.id));
+    missing.templates = templateIds.filter((id) => !found.has(id));
+  }
+
+  if (sourceIds.length) {
+    const [rows] = await conn.query(
+      'SELECT id FROM income_sources WHERE household_id=? AND id IN (?)',
+      [householdId, sourceIds]
+    );
+    const found = new Set(rows.map((r) => r.id));
+    missing.incomeSources = sourceIds.filter((id) => !found.has(id));
+  }
+
+  return missing;
+}
+
 app.get('/api/v1/sync/changes', async (req, res) => {
   const since = req.query.since ? Number(req.query.since) : 0;
   const householdId = req.householdId;
@@ -330,8 +379,47 @@ app.post('/api/v1/sync/push', async (req, res) => {
   try {
     await conn.beginTransaction();
     await upsertCategories(conn, upserts.categories, ctx);
+
+    // Validate category refs for templates before inserting them
+    const templateCategoryIds = (upserts.bill_templates || [])
+      .map((t) => normalizeString(t.category_id))
+      .filter(Boolean);
+    if (templateCategoryIds.length) {
+      const missing = await ensureRefsExist(conn, ctx.householdId, templateCategoryIds);
+      if (missing.categories.length) {
+        throw new ValidationError(`Missing categories for templates: ${missing.categories.join(',')}`);
+      }
+    }
+
     await upsertBillTemplates(conn, upserts.bill_templates, ctx);
+
+    // Validate refs for bill instances: templates + categories
+    const instanceTemplateIds = (upserts.bill_instances || [])
+      .map((i) => normalizeString(i.template_id))
+      .filter(Boolean);
+    const instanceCategoryIds = (upserts.bill_instances || [])
+      .map((i) => normalizeString(i.category_id))
+      .filter(Boolean);
+    const instanceMissing = await ensureRefsExist(conn, ctx.householdId, instanceCategoryIds, instanceTemplateIds);
+    if (instanceMissing.categories.length || instanceMissing.templates.length) {
+      throw new ValidationError(
+        `Missing refs for bill_instances: categories=[${instanceMissing.categories.join(',')}] templates=[${instanceMissing.templates.join(',')}]`
+      );
+    }
+
     await upsertBillInstances(conn, upserts.bill_instances, ctx);
+
+    // Validate refs for income instances: income_sources
+    const incomeSourceIds = (upserts.income_instances || [])
+      .map((i) => normalizeString(i.source_id))
+      .filter(Boolean);
+    const incomeMissing = await ensureRefsExist(conn, ctx.householdId, [], [], incomeSourceIds);
+    if (incomeMissing.incomeSources.length) {
+      throw new ValidationError(
+        `Missing refs for income_instances: income_sources=[${incomeMissing.incomeSources.join(',')}]`
+      );
+    }
+
     await upsertIncomeSources(conn, upserts.income_sources, ctx);
     await upsertIncomeInstances(conn, upserts.income_instances, ctx);
 
@@ -345,14 +433,15 @@ app.post('/api/v1/sync/push', async (req, res) => {
     res.json({ server_now: serverNow });
   } catch (e) {
     await conn.rollback();
-    console.error(e);
-    res.status(500).json({ error: e.message });
+    console.error('sync/push failed', e);
+    const status = e instanceof ValidationError ? e.status : 500;
+    res.status(status).json({ error: e.message });
   } finally {
     conn.release();
   }
 });
 
-app.get('/api/v1/sync/full', async (req, res) => {
+async function sendFullSnapshot(req, res) {
   const householdId = req.householdId;
   const conn = await pool.getConnection();
   try {
@@ -371,12 +460,21 @@ app.get('/api/v1/sync/full', async (req, res) => {
   } finally {
     conn.release();
   }
-});
+}
+
+// Bootstrap (full snapshot) – for first-time clients; prefer /changes afterward.
+app.get('/api/v1/sync/bootstrap', sendFullSnapshot);
+// Backwards-compatibility alias
+app.get('/api/v1/sync/full', sendFullSnapshot);
 
 app.get('/api/v1/export', (req, res) => {
-  res.status(410).json({ error: 'Legacy export/import has been replaced by sync endpoints. Use /api/v1/sync/full and /api/v1/sync/changes.' });
+  res
+    .status(410)
+    .json({ error: 'DANGEROUS legacy export/import disabled. Use /api/v1/sync/bootstrap or /api/v1/sync/changes.' });
 });
 
 app.post('/api/v1/import', (req, res) => {
-  res.status(410).json({ error: 'Legacy import that overwrote tables has been disabled. Use /api/v1/sync/push for incremental writes.' });
+  res
+    .status(410)
+    .json({ error: 'DANGEROUS legacy import (table overwrite) disabled. Use /api/v1/sync/push for incremental writes.' });
 });

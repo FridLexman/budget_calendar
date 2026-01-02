@@ -197,6 +197,11 @@ class SyncService {
 
   Future<Map<String, dynamic>> _buildLocalUpserts() async {
     final categoriesRows = await (db.select(db.categories)..where((c) => c.profileId.equals(db.profile))).get();
+    final categoryRemoteSet = {
+      for (final c in categoriesRows)
+        if (c.remoteId != null) c.remoteId!
+    };
+    final categoryByName = {for (final c in categoriesRows) c.name: c};
     final catPayload = categoriesRows.map((c) {
       return {
         'id': c.remoteId ?? const Uuid().v4(),
@@ -211,10 +216,14 @@ class SyncService {
 
     final templatesRows = await (db.select(db.billTemplates)..where((t) => t.profileId.equals(db.profile))).get();
     final templatePayload = templatesRows.map((t) {
+      String? categoryRemote = t.categoryRemoteId;
+      if (categoryRemote == null || !categoryRemoteSet.contains(categoryRemote)) {
+        categoryRemote = t.category != null ? categoryByName[t.category!]?.remoteId : categoryRemote;
+      }
       return {
         'id': t.remoteId ?? const Uuid().v4(),
         'name': t.name,
-        'category_id': t.categoryRemoteId,
+        'category_id': categoryRemote,
         'default_amount_cents': t.defaultAmountCents,
         'start_date': t.startDate,
         'active': t.active,
@@ -226,11 +235,13 @@ class SyncService {
     }).toList();
 
     final templateById = {for (final t in templatesRows) t.id: t};
-    final categoryByName = {for (final c in categoriesRows) c.name: c};
     final instancesRows = await (db.select(db.billInstances)..where((i) => i.profileId.equals(db.profile))).get();
     final instancesPayload = instancesRows.map((i) {
       final templateRemote = i.templateRemoteId ?? templateById[i.templateId]?.remoteId;
-      final categoryRemote = i.categoryRemoteId ?? (i.category != null ? categoryByName[i.category!]?.remoteId : null);
+      String? categoryRemote = i.categoryRemoteId;
+      if (categoryRemote == null || !categoryRemoteSet.contains(categoryRemote)) {
+        categoryRemote = i.category != null ? categoryByName[i.category!]?.remoteId : categoryRemote;
+      }
       return {
         'id': i.remoteId ?? const Uuid().v4(),
         'template_id': templateRemote,
@@ -310,11 +321,11 @@ class SyncService {
           continue;
         }
         final name = c['name'] as String? ?? 'Category';
-        Category? existing =
+        Category? existingByName =
             await (db.select(db.categories)..where((t) => t.profileId.equals(db.profile) & t.remoteId.equals(remoteId))).getSingleOrNull();
         // Fallback: match by name to avoid UNIQUE(name) collisions when remote_id is new
-        existing ??= await (db.select(db.categories)..where((t) => t.profileId.equals(db.profile) & t.name.equals(name))).getSingleOrNull();
-
+        existingByName ??=
+            await (db.select(db.categories)..where((t) => t.profileId.equals(db.profile) & t.name.equals(name))).getSingleOrNull();
         final companion = CategoriesCompanion(
           profileId: Value(db.profile),
           remoteId: Value(remoteId),
@@ -328,10 +339,10 @@ class SyncService {
           deviceId: Value(c['device_id'] as String?),
           clientUpdatedAt: Value((c['client_updated_at'] as num?)?.toInt()),
         );
-        if (existing == null) {
+        if (existingByName == null) {
           await db.into(db.categories).insert(companion);
         } else {
-          await (db.update(db.categories)..where((t) => t.id.equals(existing!.id))).write(companion);
+          await (db.update(db.categories)..where((t) => t.id.equals(existingByName.id))).write(companion);
         }
       }
 
