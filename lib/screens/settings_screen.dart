@@ -215,6 +215,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _testConnection() async {
     final settings = SyncSetting(
       id: 0,
+      profileId: 'remote',
       useRemote: _useRemote,
       baseUrl: _baseUrlCtrl.text.trim(),
       apiKey: _apiKeyCtrl.text.trim(),
@@ -240,6 +241,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final settings = SyncSetting(
         id: 0,
+        profileId: 'remote',
         useRemote: _useRemote,
         baseUrl: _baseUrlCtrl.text.trim(),
         apiKey: _apiKeyCtrl.text.trim(),
