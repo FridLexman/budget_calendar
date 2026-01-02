@@ -29,48 +29,59 @@ class BillsScreen extends ConsumerWidget {
           stream: db.watchAllBillTemplates(),
           builder: (context, snap) {
             final rows = snap.data ?? [];
-            if (rows.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    const Text('No recurring bills yet.'),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Add recurring bills to automatically\ngenerate them each month.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: () => _showAddBillFlow(context, db),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add recurring bill'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
             final activeTemplates = rows.where((t) => t.active).toList();
             final inactiveTemplates = rows.where((t) => !t.active).toList();
 
             return ListView(
               padding: const EdgeInsets.all(12),
               children: [
+                if (rows.isEmpty) ...[
+                  Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.receipt_long,
+                                  size: 32, color: Colors.grey[600]),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'No recurring bills yet',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Add a recurring bill to automatically generate future instances.',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: () => _showAddBillFlow(context, db),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add recurring bill'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 if (activeTemplates.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Text(
                       'Active (${activeTemplates.length})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ),
-                  ...activeTemplates.map((t) => _buildTemplateCard(context, db, t)),
+                  ...activeTemplates
+                      .map((t) => _buildTemplateCard(context, db, t)),
                 ],
                 if (inactiveTemplates.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -79,12 +90,13 @@ class BillsScreen extends ConsumerWidget {
                     child: Text(
                       'Inactive (${inactiveTemplates.length})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey,
-                      ),
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
                     ),
                   ),
-                  ...inactiveTemplates.map((t) => _buildTemplateCard(context, db, t)),
+                  ...inactiveTemplates
+                      .map((t) => _buildTemplateCard(context, db, t)),
                 ],
                 const SizedBox(height: 16),
                 _buildInstancesSection(db),
@@ -98,12 +110,14 @@ class BillsScreen extends ConsumerWidget {
           label: const Text('Add bill'),
         ),
       ),
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, st) => Scaffold(body: Center(child: Text('Error: $e'))),
     );
   }
 
-  Widget _buildTemplateCard(BuildContext context, AppDatabase db, BillTemplate template) {
+  Widget _buildTemplateCard(
+      BuildContext context, AppDatabase db, BillTemplate template) {
     final rec = Recurrence.fromJsonString(template.recurrenceRule);
     final recurrenceText = rec?.displayName ?? 'No recurrence';
 
@@ -148,16 +162,21 @@ class BillsScreen extends ConsumerWidget {
                       children: [
                         if (template.category != null) ...[
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.secondaryContainer,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               template.category!,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Theme.of(context).colorScheme.onSecondaryContainer,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSecondaryContainer,
                               ),
                             ),
                           ),
@@ -213,7 +232,8 @@ class BillsScreen extends ConsumerWidget {
           builder: (context, snap) {
             final rows = (snap.data ?? []).take(100).toList();
             if (rows.isEmpty) {
-              return const Text('No bill instances found in the local database.');
+              return const Text(
+                  'No bill instances found in the local database.');
             }
             return ListView.builder(
               shrinkWrap: true,
@@ -237,7 +257,8 @@ class BillsScreen extends ConsumerWidget {
                             : Colors.grey[600],
                   ),
                   title: Text(b.titleSnapshot),
-                  subtitle: Text('${b.dueDate} • ${b.category ?? 'Uncategorized'}'),
+                  subtitle:
+                      Text('${b.dueDate} • ${b.category ?? 'Uncategorized'}'),
                   trailing: Text(
                     formatCents(b.amountCents),
                     style: TextStyle(
@@ -254,7 +275,8 @@ class BillsScreen extends ConsumerWidget {
     );
   }
 
-  void _showTemplateActions(BuildContext context, AppDatabase db, BillTemplate template) {
+  void _showTemplateActions(
+      BuildContext context, AppDatabase db, BillTemplate template) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -290,7 +312,8 @@ class BillsScreen extends ConsumerWidget {
               ),
               onTap: () async {
                 Navigator.pop(context);
-                await db.toggleBillTemplateActive(template.id, !template.active);
+                await db.toggleBillTemplateActive(
+                    template.id, !template.active);
               },
             ),
             ListTile(
@@ -314,7 +337,8 @@ class BillsScreen extends ConsumerWidget {
                       ),
                       FilledButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        style:
+                            FilledButton.styleFrom(backgroundColor: Colors.red),
                         child: const Text('Delete'),
                       ),
                     ],
@@ -426,16 +450,19 @@ class BillsScreen extends ConsumerWidget {
                     labelText: 'Default amount',
                     prefixText: '\$',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: selectedCategory,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: categories.map((c) => DropdownMenuItem(
-                    value: c.name,
-                    child: Text(c.name),
-                  )).toList(),
+                  items: categories
+                      .map((c) => DropdownMenuItem(
+                            value: c.name,
+                            child: Text(c.name),
+                          ))
+                      .toList(),
                   onChanged: (v) => setState(() => selectedCategory = v),
                 ),
                 const SizedBox(height: 16),
@@ -465,13 +492,18 @@ class BillsScreen extends ConsumerWidget {
                   value: recurrenceTypeIdx,
                   decoration: const InputDecoration(labelText: 'Recurrence'),
                   items: const [
-                    DropdownMenuItem(value: 0, child: Text('Monthly (day of month)')),
+                    DropdownMenuItem(
+                        value: 0, child: Text('Monthly (day of month)')),
                     DropdownMenuItem(value: 1, child: Text('Weekly (weekday)')),
-                    DropdownMenuItem(value: 2, child: Text('Biweekly (every 2 weeks)')),
-                    DropdownMenuItem(value: 3, child: Text('Semi-monthly (1st & 15th)')),
+                    DropdownMenuItem(
+                        value: 2, child: Text('Biweekly (every 2 weeks)')),
+                    DropdownMenuItem(
+                        value: 3, child: Text('Semi-monthly (1st & 15th)')),
                     DropdownMenuItem(value: 4, child: Text('Yearly')),
-                    DropdownMenuItem(value: 5, child: Text('Last day of month')),
-                    DropdownMenuItem(value: 6, child: Text('Last business day')),
+                    DropdownMenuItem(
+                        value: 5, child: Text('Last day of month')),
+                    DropdownMenuItem(
+                        value: 6, child: Text('Last business day')),
                   ],
                   onChanged: (v) => setState(() => recurrenceTypeIdx = v ?? 0),
                 ),
@@ -493,15 +525,23 @@ class BillsScreen extends ConsumerWidget {
                     value: weeklyWeekday,
                     decoration: const InputDecoration(labelText: 'Weekday'),
                     items: const [
-                      DropdownMenuItem(value: DateTime.monday, child: Text('Monday')),
-                      DropdownMenuItem(value: DateTime.tuesday, child: Text('Tuesday')),
-                      DropdownMenuItem(value: DateTime.wednesday, child: Text('Wednesday')),
-                      DropdownMenuItem(value: DateTime.thursday, child: Text('Thursday')),
-                      DropdownMenuItem(value: DateTime.friday, child: Text('Friday')),
-                      DropdownMenuItem(value: DateTime.saturday, child: Text('Saturday')),
-                      DropdownMenuItem(value: DateTime.sunday, child: Text('Sunday')),
+                      DropdownMenuItem(
+                          value: DateTime.monday, child: Text('Monday')),
+                      DropdownMenuItem(
+                          value: DateTime.tuesday, child: Text('Tuesday')),
+                      DropdownMenuItem(
+                          value: DateTime.wednesday, child: Text('Wednesday')),
+                      DropdownMenuItem(
+                          value: DateTime.thursday, child: Text('Thursday')),
+                      DropdownMenuItem(
+                          value: DateTime.friday, child: Text('Friday')),
+                      DropdownMenuItem(
+                          value: DateTime.saturday, child: Text('Saturday')),
+                      DropdownMenuItem(
+                          value: DateTime.sunday, child: Text('Sunday')),
                     ],
-                    onChanged: (v) => setState(() => weeklyWeekday = v ?? DateTime.monday),
+                    onChanged: (v) =>
+                        setState(() => weeklyWeekday = v ?? DateTime.monday),
                   ),
                 ],
                 if (recurrenceTypeIdx == 2) ...[
@@ -518,7 +558,8 @@ class BillsScreen extends ConsumerWidget {
                             lastDate: DateTime(2100, 12, 31),
                             initialDate: biweeklyAnchor,
                           );
-                          if (picked != null) setState(() => biweeklyAnchor = picked);
+                          if (picked != null)
+                            setState(() => biweeklyAnchor = picked);
                         },
                         child: const Text('Pick'),
                       ),
@@ -534,17 +575,21 @@ class BillsScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: TextField(
-                          decoration: const InputDecoration(labelText: 'First day'),
+                          decoration:
+                              const InputDecoration(labelText: 'First day'),
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => semiMonthlyDay1 = int.tryParse(v) ?? 1,
+                          onChanged: (v) =>
+                              semiMonthlyDay1 = int.tryParse(v) ?? 1,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          decoration: const InputDecoration(labelText: 'Second day'),
+                          decoration:
+                              const InputDecoration(labelText: 'Second day'),
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => semiMonthlyDay2 = int.tryParse(v) ?? 15,
+                          onChanged: (v) =>
+                              semiMonthlyDay2 = int.tryParse(v) ?? 15,
                         ),
                       ),
                     ],
@@ -555,17 +600,21 @@ class BillsScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: TextField(
-                          decoration: const InputDecoration(labelText: 'Month (1-12)'),
+                          decoration:
+                              const InputDecoration(labelText: 'Month (1-12)'),
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => yearlyMonth = int.tryParse(v) ?? yearlyMonth,
+                          onChanged: (v) =>
+                              yearlyMonth = int.tryParse(v) ?? yearlyMonth,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          decoration: const InputDecoration(labelText: 'Day (1-31)'),
+                          decoration:
+                              const InputDecoration(labelText: 'Day (1-31)'),
                           keyboardType: TextInputType.number,
-                          onChanged: (v) => yearlyDay = int.tryParse(v) ?? yearlyDay,
+                          onChanged: (v) =>
+                              yearlyDay = int.tryParse(v) ?? yearlyDay,
                         ),
                       ),
                     ],
@@ -588,7 +637,8 @@ class BillsScreen extends ConsumerWidget {
                 String rule;
                 switch (recurrenceTypeIdx) {
                   case 0:
-                    rule = Recurrence.toMonthly(dayOfMonth: monthlyDay.clamp(1, 31));
+                    rule = Recurrence.toMonthly(
+                        dayOfMonth: monthlyDay.clamp(1, 31));
                     break;
                   case 1:
                     rule = Recurrence.toWeekly(weekday: weeklyWeekday);
@@ -642,11 +692,15 @@ class BillsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showEditTemplateDialog(BuildContext context, AppDatabase db, BillTemplate template) async {
+  Future<void> _showEditTemplateDialog(
+      BuildContext context, AppDatabase db, BillTemplate template) async {
     final nameCtrl = TextEditingController(text: template.name);
-    final amtCtrl = TextEditingController(text: centsToInputString(template.defaultAmountCents));
+    final amtCtrl = TextEditingController(
+        text: centsToInputString(template.defaultAmountCents));
     String? selectedCategory = template.category;
-    DateTime startDate = template.startDate != null ? parseYmd(template.startDate!) : DateTime.now();
+    DateTime startDate = template.startDate != null
+        ? parseYmd(template.startDate!)
+        : DateTime.now();
 
     final categories = await db.getAllCategories();
 
@@ -672,16 +726,19 @@ class BillsScreen extends ConsumerWidget {
                     labelText: 'Default amount',
                     prefixText: '\$',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   value: selectedCategory,
                   decoration: const InputDecoration(labelText: 'Category'),
-                  items: categories.map((c) => DropdownMenuItem(
-                    value: c.name,
-                    child: Text(c.name),
-                  )).toList(),
+                  items: categories
+                      .map((c) => DropdownMenuItem(
+                            value: c.name,
+                            child: Text(c.name),
+                          ))
+                      .toList(),
                   onChanged: (v) => setState(() => selectedCategory = v),
                 ),
                 const SizedBox(height: 16),

@@ -19,46 +19,28 @@ class CalendarScreen extends ConsumerStatefulWidget {
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   bool _initialized = false;
-  bool _isLoadingMonth = false;
-  final Map<String, List<BillInstance>> _monthCache = {};
+  final Set<String> _generatedMonths = {};
 
-  String _monthKey(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
+  String _monthKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
-  Future<void> _loadMonth(AppDatabase db, DateTime month, {bool prefetchNext = false}) async {
+  Future<void> _ensureMonth(AppDatabase db, DateTime month,
+      {bool prefetchNext = false}) async {
     final key = _monthKey(month);
-    if (_monthCache.containsKey(key) && !prefetchNext) return;
-    setState(() => _isLoadingMonth = true);
-
-    // Ensure generated and then fetch for this month
-    await MonthGenerator(db).ensureMonthGenerated(month.year, month.month);
-    final start = DateTime(month.year, month.month, 1);
-    final end = DateTime(month.year, month.month + 1, 0);
-    final rows = await db.getBillInstancesForMonth(ymd(start), ymd(end));
-
-    setState(() {
-      _monthCache[key] = rows;
-      _isLoadingMonth = false;
-    });
-
+    if (!_generatedMonths.contains(key)) {
+      _generatedMonths.add(key);
+      await MonthGenerator(db).ensureMonthGenerated(month.year, month.month);
+    }
     if (prefetchNext) {
       final next = DateTime(month.year, month.month + 1, 1);
       final nextKey = _monthKey(next);
-      if (!_monthCache.containsKey(nextKey)) {
-        // fire-and-forget without flipping the loading indicator
-        MonthGenerator(db).ensureMonthGenerated(next.year, next.month).then((_) async {
-          final nStart = DateTime(next.year, next.month, 1);
-          final nEnd = DateTime(next.year, next.month + 1, 0);
-          final nRows = await db.getBillInstancesForMonth(ymd(nStart), ymd(nEnd));
-          if (mounted) {
-            setState(() {
-              _monthCache[nextKey] = nRows;
-            });
-          }
-        });
+      if (!_generatedMonths.contains(nextKey)) {
+        _generatedMonths.add(nextKey);
+        await MonthGenerator(db).ensureMonthGenerated(next.year, next.month);
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final dbAsync = ref.watch(appDatabaseProvider);
@@ -69,62 +51,80 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       data: (db) {
         if (!_initialized) {
           _initialized = true;
-          _loadMonth(db, focusedMonth, prefetchNext: true);
+          _ensureMonth(db, focusedMonth, prefetchNext: true);
         }
 
-        final monthRows = _monthCache[_monthKey(focusedMonth)] ?? const <BillInstance>[];
+        final monthStart = DateTime(focusedMonth.year, focusedMonth.month, 1);
+        final monthEnd = DateTime(focusedMonth.year, focusedMonth.month + 1, 0);
+        final startStr = ymd(monthStart);
+        final endStr = ymd(monthEnd);
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Calendar'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.today),
-                tooltip: 'Go to today',
-                onPressed: () {
-                  final now = DateTime.now();
-                  ref.read(selectedDateProvider.notifier).state = now;
-                  ref.read(selectedMonthProvider.notifier).state = DateTime(now.year, now.month, 1);
-                },
+        return StreamBuilder<List<BillInstance>>(
+          stream: db.watchBillInstancesForMonth(startStr, endStr),
+          builder: (context, snap) {
+            final monthRows = snap.data ?? const <BillInstance>[];
+            final isLoading = snap.connectionState == ConnectionState.waiting;
+
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Calendar'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.today),
+                    tooltip: 'Go to today',
+                    onPressed: () {
+                      final now = DateTime.now();
+                      ref.read(selectedDateProvider.notifier).state = now;
+                      ref.read(selectedMonthProvider.notifier).state =
+                          DateTime(now.year, now.month, 1);
+                      _ensureMonth(db, DateTime(now.year, now.month, 1),
+                          prefetchNext: true);
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
-          body: _CalendarBody(
-            db: db,
-            focusedMonth: focusedMonth,
-            selectedDay: selectedDay,
-            calendarFormat: _calendarFormat,
-            onFormatChanged: (f) => setState(() => _calendarFormat = f),
-            onDaySelected: (d) {
-              ref.read(selectedDateProvider.notifier).state = d;
-              ref.read(selectedMonthProvider.notifier).state = DateTime(d.year, d.month, 1);
-            },
-            onMonthChanged: (m) {
-              ref.read(selectedMonthProvider.notifier).state = m;
-              _loadMonth(db, m, prefetchNext: true);
-            },
-            monthRows: monthRows,
-            isLoadingMonth: _isLoadingMonth,
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => DayDetailScreen(date: selectedDay)),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Add Bill'),
-          ),
+              body: _CalendarBody(
+                db: db,
+                focusedMonth: focusedMonth,
+                selectedDay: selectedDay,
+                calendarFormat: _calendarFormat,
+                onFormatChanged: (f) => setState(() => _calendarFormat = f),
+                onDaySelected: (d) {
+                  ref.read(selectedDateProvider.notifier).state = d;
+                  ref.read(selectedMonthProvider.notifier).state =
+                      DateTime(d.year, d.month, 1);
+                },
+                onMonthChanged: (m) {
+                  ref.read(selectedMonthProvider.notifier).state = m;
+                  _ensureMonth(db, m, prefetchNext: true);
+                },
+                monthRows: monthRows,
+                isLoadingMonth: isLoading,
+              ),
+              floatingActionButton: FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (_) => DayDetailScreen(date: selectedDay)),
+                  );
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('Add Bill'),
+              ),
+            );
+          },
         );
       },
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, st) => Scaffold(body: Center(child: Text('Error: $e'))),
     );
   }
 
   Future<_DayInfo> _getDayInfo(AppDatabase db, String dateStr) async {
     final bills = await db.getBillInstancesForDate(dateStr);
-    final hasPaid = bills.any((b) => b.status == 'paid' || b.status == 'partial');
+    final hasPaid =
+        bills.any((b) => b.status == 'paid' || b.status == 'partial');
     return _DayInfo(count: bills.length, hasPaid: hasPaid);
   }
 }
@@ -154,10 +154,13 @@ class _CalendarBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String dateOnly(String s) => s.length >= 10 ? s.substring(0, 10) : s;
     final markers = <String, _DayInfo>{};
     for (final b in monthRows.where((r) => r.status != 'skipped')) {
-      final info = markers.putIfAbsent(b.dueDate, () => _DayInfo(count: 0, hasPaid: false));
-      markers[b.dueDate] = _DayInfo(
+      final key = dateOnly(b.dueDate);
+      final info =
+          markers.putIfAbsent(key, () => _DayInfo(count: 0, hasPaid: false));
+      markers[key] = _DayInfo(
         count: info.count + 1,
         hasPaid: info.hasPaid || b.status == 'paid' || b.status == 'partial',
       );
@@ -178,8 +181,10 @@ class _CalendarBody extends StatelessWidget {
           selectedDayPredicate: (d) => isSameDay(d, selectedDay),
           eventLoader: (d) {
             final dateStr = ymd(d);
-            final rowsForDay =
-                monthRows.where((r) => r.dueDate == dateStr && r.status != 'skipped').toList();
+            final rowsForDay = monthRows
+                .where((r) =>
+                    dateOnly(r.dueDate) == dateStr && r.status != 'skipped')
+                .toList();
             return rowsForDay;
           },
           onDaySelected: (sel, foc) => onDaySelected(sel),
@@ -190,7 +195,8 @@ class _CalendarBody extends StatelessWidget {
           calendarBuilders: CalendarBuilders(
             markerBuilder: (context, day, events) {
               final info = markers[ymd(day)];
-              if (info == null || info.count == 0) return const SizedBox.shrink();
+              if (info == null || info.count == 0)
+                return const SizedBox.shrink();
               return Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
@@ -261,8 +267,9 @@ class _MonthSummaryBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String dateOnly(String s) => s.length >= 10 ? s.substring(0, 10) : s;
     final preview = rows.take(5).toList()
-      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+      ..sort((a, b) => dateOnly(a.dueDate).compareTo(dateOnly(b.dueDate)));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,9 +292,13 @@ class _MonthSummaryBanner extends StatelessWidget {
   }
 }
 
-Widget _buildDaySummaryFromMonth(BuildContext context, List<BillInstance> monthRows, DateTime day) {
+Widget _buildDaySummaryFromMonth(
+    BuildContext context, List<BillInstance> monthRows, DateTime day) {
   final dateStr = ymd(day);
-  final rows = monthRows.where((r) => r.dueDate == dateStr && r.status != 'skipped').toList();
+  String dateOnly(String s) => s.length >= 10 ? s.substring(0, 10) : s;
+  final rows = monthRows
+      .where((r) => dateOnly(r.dueDate) == dateStr && r.status != 'skipped')
+      .toList();
 
   if (rows.isEmpty) {
     return Center(
@@ -371,7 +382,8 @@ Widget _buildDaySummaryFromMonth(BuildContext context, List<BillInstance> monthR
                 ),
               ),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => DayDetailScreen(date: day)));
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => DayDetailScreen(date: day)));
               },
             );
           },
