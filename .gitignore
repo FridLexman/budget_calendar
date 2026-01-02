@@ -31,6 +31,10 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Generated tokens/QRs
+token_qr.png
+token_qr_gen.py
+
 # Symbolication related
 app.*.symbols
 
