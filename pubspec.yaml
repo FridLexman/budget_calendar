@@ -2,7 +2,6 @@ name: budget_calendar
 description: "Budget Calendar - Track bills, income, and spending"
 version: 2.0.0+1
 publish_to: 'none'
-version: 1.0.2+3
 
 environment:
   sdk: ^3.5.4
