@@ -23,6 +23,13 @@ class SyncService {
     debugPrint('[SyncService] $msg');
   }
 
+  bool _asBool(dynamic v, {bool fallback = true}) {
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) return v.toLowerCase() == 'true' || v == '1';
+    return fallback;
+  }
+
   bool get isRemoteEnabled =>
       settings.useRemote &&
       (settings.baseUrl?.isNotEmpty ?? false) &&
@@ -62,6 +69,9 @@ class SyncService {
   Future<SyncResult> syncNow() async {
     _log('Sync start');
     try {
+      if (db.profile != 'remote') {
+        return const SyncResult(false, 'Sync only runs on the remote profile');
+      }
       if (!isRemoteEnabled) {
         return const SyncResult(false, 'Remote sync disabled');
       }
@@ -186,7 +196,7 @@ class SyncService {
   }
 
   Future<Map<String, dynamic>> _buildLocalUpserts() async {
-    final categoriesRows = await db.select(db.categories).get();
+    final categoriesRows = await (db.select(db.categories)..where((c) => c.profileId.equals(db.profile))).get();
     final catPayload = categoriesRows.map((c) {
       return {
         'id': c.remoteId ?? const Uuid().v4(),
@@ -199,7 +209,7 @@ class SyncService {
       };
     }).toList();
 
-    final templatesRows = await db.select(db.billTemplates).get();
+    final templatesRows = await (db.select(db.billTemplates)..where((t) => t.profileId.equals(db.profile))).get();
     final templatePayload = templatesRows.map((t) {
       return {
         'id': t.remoteId ?? const Uuid().v4(),
@@ -217,7 +227,7 @@ class SyncService {
 
     final templateById = {for (final t in templatesRows) t.id: t};
     final categoryByName = {for (final c in categoriesRows) c.name: c};
-    final instancesRows = await db.select(db.billInstances).get();
+    final instancesRows = await (db.select(db.billInstances)..where((i) => i.profileId.equals(db.profile))).get();
     final instancesPayload = instancesRows.map((i) {
       final templateRemote = i.templateRemoteId ?? templateById[i.templateId]?.remoteId;
       final categoryRemote = i.categoryRemoteId ?? (i.category != null ? categoryByName[i.category!]?.remoteId : null);
@@ -238,7 +248,7 @@ class SyncService {
       };
     }).toList();
 
-    final incomeSourcesRows = await db.select(db.incomeSources).get();
+    final incomeSourcesRows = await (db.select(db.incomeSources)..where((s) => s.profileId.equals(db.profile))).get();
     final incomeSourcesPayload = incomeSourcesRows.map((s) {
       return {
         'id': s.remoteId ?? const Uuid().v4(),
@@ -255,7 +265,7 @@ class SyncService {
     }).toList();
 
     final incomeSourcesById = {for (final s in incomeSourcesRows) s.id: s};
-    final incomeInstancesRows = await db.select(db.incomeInstances).get();
+    final incomeInstancesRows = await (db.select(db.incomeInstances)..where((i) => i.profileId.equals(db.profile))).get();
     final incomeInstancesPayload = incomeInstancesRows.map((i) {
       final sourceRemote = i.sourceRemoteId ?? incomeSourcesById[i.sourceId]?.remoteId;
       return {
@@ -294,16 +304,19 @@ class SyncService {
         final remoteId = c['id'] as String?;
         if (remoteId == null) continue;
         if (c['deleted_at_server'] != null) {
-          await (db.delete(db.categories)..where((t) => t.remoteId.equals(remoteId))).go();
+          await (db.delete(db.categories)
+                ..where((t) => t.profileId.equals(db.profile) & t.remoteId.equals(remoteId)))
+              .go();
           continue;
         }
         final name = c['name'] as String? ?? 'Category';
         Category? existing =
-            await (db.select(db.categories)..where((t) => t.remoteId.equals(remoteId))).getSingleOrNull();
+            await (db.select(db.categories)..where((t) => t.profileId.equals(db.profile) & t.remoteId.equals(remoteId))).getSingleOrNull();
         // Fallback: match by name to avoid UNIQUE(name) collisions when remote_id is new
-        existing ??= await (db.select(db.categories)..where((t) => t.name.equals(name))).getSingleOrNull();
+        existing ??= await (db.select(db.categories)..where((t) => t.profileId.equals(db.profile) & t.name.equals(name))).getSingleOrNull();
 
         final companion = CategoriesCompanion(
+          profileId: Value(db.profile),
           remoteId: Value(remoteId),
           householdId: Value(c['household_id'] as String?),
           name: Value(name),
@@ -326,18 +339,21 @@ class SyncService {
         final remoteId = t['id'] as String?;
         if (remoteId == null) continue;
         if (t['deleted_at_server'] != null) {
-          await (db.delete(db.billTemplates)..where((b) => b.remoteId.equals(remoteId))).go();
+          await (db.delete(db.billTemplates)
+                ..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId)))
+              .go();
           continue;
         }
-        final existing = await (db.select(db.billTemplates)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+        final existing = await (db.select(db.billTemplates)..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId))).getSingleOrNull();
         final categoryRemote = t['category_id'] as String?;
         final categoryName = categoryRemote == null
             ? null
-            : (await (db.select(db.categories)..where((c) => c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
+            : (await (db.select(db.categories)..where((c) => c.profileId.equals(db.profile) & c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
         final recurrenceRule = t['recurrence_rule'] as String? ?? existing?.recurrenceRule;
-        final active = (t['active'] as bool?) ?? existing?.active ?? true;
+        final active = _asBool(t['active'], fallback: existing?.active ?? true);
         final createdAt = DateTime.tryParse(t['created_at'] as String? ?? '') ?? existing?.createdAt ?? DateTime.now();
         final companion = BillTemplatesCompanion(
+          profileId: Value(db.profile),
           remoteId: Value(remoteId),
           householdId: Value(t['household_id'] as String?),
           name: Value(t['name'] as String? ?? 'Template'),
@@ -364,23 +380,26 @@ class SyncService {
         final remoteId = i['id'] as String?;
         if (remoteId == null) continue;
         if (i['deleted_at_server'] != null) {
-          await (db.delete(db.billInstances)..where((b) => b.remoteId.equals(remoteId))).go();
+          await (db.delete(db.billInstances)
+                ..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId)))
+              .go();
           continue;
         }
         final existing =
-            await (db.select(db.billInstances)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+            await (db.select(db.billInstances)..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId))).getSingleOrNull();
         final templateRemote = i['template_id'] as String?;
         final templateRow = templateRemote == null
             ? null
-            : await (db.select(db.billTemplates)..where((t) => t.remoteId.equals(templateRemote))).getSingleOrNull();
+            : await (db.select(db.billTemplates)..where((t) => t.profileId.equals(db.profile) & t.remoteId.equals(templateRemote))).getSingleOrNull();
         final categoryRemote = i['category_id'] as String?;
         final categoryName = categoryRemote == null
             ? null
-            : (await (db.select(db.categories)..where((c) => c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
+            : (await (db.select(db.categories)..where((c) => c.profileId.equals(db.profile) & c.remoteId.equals(categoryRemote))).getSingleOrNull())?.name;
 
         final status = i['status'] as String? ?? existing?.status ?? 'scheduled';
         final createdAt = DateTime.tryParse(i['created_at'] as String? ?? '') ?? existing?.createdAt ?? DateTime.now();
         final companion = BillInstancesCompanion(
+          profileId: Value(db.profile),
           remoteId: Value(remoteId),
           householdId: Value(i['household_id'] as String?),
           templateId: Value(templateRow?.id),
@@ -411,11 +430,14 @@ class SyncService {
         final remoteId = s['id'] as String?;
         if (remoteId == null) continue;
         if (s['deleted_at_server'] != null) {
-          await (db.delete(db.incomeSources)..where((b) => b.remoteId.equals(remoteId))).go();
+          await (db.delete(db.incomeSources)
+                ..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId)))
+              .go();
           continue;
         }
-        final existing = await (db.select(db.incomeSources)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+        final existing = await (db.select(db.incomeSources)..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId))).getSingleOrNull();
         final companion = IncomeSourcesCompanion(
+          profileId: Value(db.profile),
           remoteId: Value(remoteId),
           householdId: Value(s['household_id'] as String?),
           name: Value(s['name'] as String? ?? 'Income'),
@@ -423,7 +445,7 @@ class SyncService {
           frequency: Value(s['frequency'] as String? ?? 'monthly'),
           startDate: Value(s['start_date'] as String?),
           anchorDate: Value(s['anchor_date'] as String?),
-          active: Value((s['active'] ?? true) == true),
+          active: Value(_asBool(s['active'], fallback: existing?.active ?? true)),
           createdAt: Value(DateTime.tryParse(s['created_at'] as String? ?? '') ?? DateTime.now()),
           updatedAtServer: Value((s['updated_at_server'] as num?)?.toInt()),
           deletedAtServer: Value((s['deleted_at_server'] as num?)?.toInt()),
@@ -441,16 +463,19 @@ class SyncService {
         final remoteId = i['id'] as String?;
         if (remoteId == null) continue;
         if (i['deleted_at_server'] != null) {
-          await (db.delete(db.incomeInstances)..where((b) => b.remoteId.equals(remoteId))).go();
+          await (db.delete(db.incomeInstances)
+                ..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId)))
+              .go();
           continue;
         }
         final sourceRemote = i['source_id'] as String?;
         final sourceRow = sourceRemote == null
             ? null
-            : await (db.select(db.incomeSources)..where((t) => t.remoteId.equals(sourceRemote))).getSingleOrNull();
+            : await (db.select(db.incomeSources)..where((t) => t.profileId.equals(db.profile) & t.remoteId.equals(sourceRemote))).getSingleOrNull();
 
-        final existing = await (db.select(db.incomeInstances)..where((b) => b.remoteId.equals(remoteId))).getSingleOrNull();
+        final existing = await (db.select(db.incomeInstances)..where((b) => b.profileId.equals(db.profile) & b.remoteId.equals(remoteId))).getSingleOrNull();
         final companion = IncomeInstancesCompanion(
+          profileId: Value(db.profile),
           remoteId: Value(remoteId),
           householdId: Value(i['household_id'] as String?),
           sourceId: Value(sourceRow?.id),

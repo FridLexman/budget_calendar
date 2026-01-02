@@ -18,6 +18,14 @@ class $BillTemplatesTable extends BillTemplates
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _remoteIdMeta =
       const VerificationMeta('remoteId');
   @override
@@ -109,6 +117,7 @@ class $BillTemplatesTable extends BillTemplates
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         remoteId,
         householdId,
         name,
@@ -136,6 +145,10 @@ class $BillTemplatesTable extends BillTemplates
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('remote_id')) {
       context.handle(_remoteIdMeta,
@@ -222,6 +235,8 @@ class $BillTemplatesTable extends BillTemplates
     return BillTemplate(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       remoteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
       householdId: attachedDatabase.typeMapping
@@ -261,6 +276,7 @@ class $BillTemplatesTable extends BillTemplates
 
 class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   final int id;
+  final String profileId;
   final String? remoteId;
   final String? householdId;
   final String name;
@@ -279,6 +295,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   final int? clientUpdatedAt;
   const BillTemplate(
       {required this.id,
+      required this.profileId,
       this.remoteId,
       this.householdId,
       required this.name,
@@ -297,6 +314,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -337,6 +355,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   BillTemplatesCompanion toCompanion(bool nullToAbsent) {
     return BillTemplatesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -379,6 +398,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BillTemplate(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
@@ -400,6 +420,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'remoteId': serializer.toJson<String?>(remoteId),
       'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
@@ -419,6 +440,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
 
   BillTemplate copyWith(
           {int? id,
+          String? profileId,
           Value<String?> remoteId = const Value.absent(),
           Value<String?> householdId = const Value.absent(),
           String? name,
@@ -435,6 +457,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
           Value<int?> clientUpdatedAt = const Value.absent()}) =>
       BillTemplate(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         remoteId: remoteId.present ? remoteId.value : this.remoteId,
         householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
@@ -462,6 +485,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   BillTemplate copyWithCompanion(BillTemplatesCompanion data) {
     return BillTemplate(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       householdId:
           data.householdId.present ? data.householdId.value : this.householdId,
@@ -496,6 +520,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   String toString() {
     return (StringBuffer('BillTemplate(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -517,6 +542,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
   @override
   int get hashCode => Object.hash(
       id,
+      profileId,
       remoteId,
       householdId,
       name,
@@ -536,6 +562,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
       identical(this, other) ||
       (other is BillTemplate &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.remoteId == this.remoteId &&
           other.householdId == this.householdId &&
           other.name == this.name &&
@@ -554,6 +581,7 @@ class BillTemplate extends DataClass implements Insertable<BillTemplate> {
 
 class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String?> remoteId;
   final Value<String?> householdId;
   final Value<String> name;
@@ -570,6 +598,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   final Value<int?> clientUpdatedAt;
   const BillTemplatesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.name = const Value.absent(),
@@ -587,6 +616,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   });
   BillTemplatesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     required String name,
@@ -605,6 +635,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
         defaultAmountCents = Value(defaultAmountCents);
   static Insertable<BillTemplate> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? remoteId,
     Expression<String>? householdId,
     Expression<String>? name,
@@ -622,6 +653,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (remoteId != null) 'remote_id': remoteId,
       if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
@@ -642,6 +674,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
 
   BillTemplatesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String?>? remoteId,
       Value<String?>? householdId,
       Value<String>? name,
@@ -658,6 +691,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
       Value<int?>? clientUpdatedAt}) {
     return BillTemplatesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       remoteId: remoteId ?? this.remoteId,
       householdId: householdId ?? this.householdId,
       name: name ?? this.name,
@@ -680,6 +714,9 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -730,6 +767,7 @@ class BillTemplatesCompanion extends UpdateCompanion<BillTemplate> {
   String toString() {
     return (StringBuffer('BillTemplatesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -764,6 +802,14 @@ class $BillInstancesTable extends BillInstances
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _remoteIdMeta =
       const VerificationMeta('remoteId');
   @override
@@ -876,6 +922,7 @@ class $BillInstancesTable extends BillInstances
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         remoteId,
         householdId,
         templateId,
@@ -907,6 +954,10 @@ class $BillInstancesTable extends BillInstances
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('remote_id')) {
       context.handle(_remoteIdMeta,
@@ -1017,6 +1068,8 @@ class $BillInstancesTable extends BillInstances
     return BillInstance(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       remoteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
       householdId: attachedDatabase.typeMapping
@@ -1064,6 +1117,7 @@ class $BillInstancesTable extends BillInstances
 
 class BillInstance extends DataClass implements Insertable<BillInstance> {
   final int id;
+  final String profileId;
   final String? remoteId;
   final String? householdId;
   final int? templateId;
@@ -1084,6 +1138,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   final int? clientUpdatedAt;
   const BillInstance(
       {required this.id,
+      required this.profileId,
       this.remoteId,
       this.householdId,
       this.templateId,
@@ -1106,6 +1161,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -1156,6 +1212,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   BillInstancesCompanion toCompanion(bool nullToAbsent) {
     return BillInstancesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -1206,6 +1263,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return BillInstance(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       householdId: serializer.fromJson<String?>(json['householdId']),
       templateId: serializer.fromJson<int?>(json['templateId']),
@@ -1231,6 +1289,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'remoteId': serializer.toJson<String?>(remoteId),
       'householdId': serializer.toJson<String?>(householdId),
       'templateId': serializer.toJson<int?>(templateId),
@@ -1254,6 +1313,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
 
   BillInstance copyWith(
           {int? id,
+          String? profileId,
           Value<String?> remoteId = const Value.absent(),
           Value<String?> householdId = const Value.absent(),
           Value<int?> templateId = const Value.absent(),
@@ -1274,6 +1334,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
           Value<int?> clientUpdatedAt = const Value.absent()}) =>
       BillInstance(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         remoteId: remoteId.present ? remoteId.value : this.remoteId,
         householdId: householdId.present ? householdId.value : this.householdId,
         templateId: templateId.present ? templateId.value : this.templateId,
@@ -1308,6 +1369,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   BillInstance copyWithCompanion(BillInstancesCompanion data) {
     return BillInstance(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       householdId:
           data.householdId.present ? data.householdId.value : this.householdId,
@@ -1350,6 +1412,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   String toString() {
     return (StringBuffer('BillInstance(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('templateId: $templateId, ')
@@ -1375,6 +1438,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
   @override
   int get hashCode => Object.hash(
       id,
+      profileId,
       remoteId,
       householdId,
       templateId,
@@ -1398,6 +1462,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
       identical(this, other) ||
       (other is BillInstance &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.remoteId == this.remoteId &&
           other.householdId == this.householdId &&
           other.templateId == this.templateId &&
@@ -1420,6 +1485,7 @@ class BillInstance extends DataClass implements Insertable<BillInstance> {
 
 class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String?> remoteId;
   final Value<String?> householdId;
   final Value<int?> templateId;
@@ -1440,6 +1506,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   final Value<int?> clientUpdatedAt;
   const BillInstancesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -1461,6 +1528,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   });
   BillInstancesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.templateId = const Value.absent(),
@@ -1484,6 +1552,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
         dueDate = Value(dueDate);
   static Insertable<BillInstance> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? remoteId,
     Expression<String>? householdId,
     Expression<int>? templateId,
@@ -1505,6 +1574,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (remoteId != null) 'remote_id': remoteId,
       if (householdId != null) 'household_id': householdId,
       if (templateId != null) 'template_id': templateId,
@@ -1528,6 +1598,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
 
   BillInstancesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String?>? remoteId,
       Value<String?>? householdId,
       Value<int?>? templateId,
@@ -1548,6 +1619,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
       Value<int?>? clientUpdatedAt}) {
     return BillInstancesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       remoteId: remoteId ?? this.remoteId,
       householdId: householdId ?? this.householdId,
       templateId: templateId ?? this.templateId,
@@ -1574,6 +1646,9 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -1636,6 +1711,7 @@ class BillInstancesCompanion extends UpdateCompanion<BillInstance> {
   String toString() {
     return (StringBuffer('BillInstancesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('templateId: $templateId, ')
@@ -1674,6 +1750,14 @@ class $IncomeSourcesTable extends IncomeSources
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _remoteIdMeta =
       const VerificationMeta('remoteId');
   @override
@@ -1759,6 +1843,7 @@ class $IncomeSourcesTable extends IncomeSources
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         remoteId,
         householdId,
         name,
@@ -1785,6 +1870,10 @@ class $IncomeSourcesTable extends IncomeSources
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('remote_id')) {
       context.handle(_remoteIdMeta,
@@ -1867,6 +1956,8 @@ class $IncomeSourcesTable extends IncomeSources
     return IncomeSource(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       remoteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
       householdId: attachedDatabase.typeMapping
@@ -1904,6 +1995,7 @@ class $IncomeSourcesTable extends IncomeSources
 
 class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   final int id;
+  final String profileId;
   final String? remoteId;
   final String? householdId;
   final String name;
@@ -1919,6 +2011,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   final int? clientUpdatedAt;
   const IncomeSource(
       {required this.id,
+      required this.profileId,
       this.remoteId,
       this.householdId,
       required this.name,
@@ -1936,6 +2029,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -1971,6 +2065,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   IncomeSourcesCompanion toCompanion(bool nullToAbsent) {
     return IncomeSourcesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -2008,6 +2103,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return IncomeSource(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
@@ -2028,6 +2124,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'remoteId': serializer.toJson<String?>(remoteId),
       'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
@@ -2046,6 +2143,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
 
   IncomeSource copyWith(
           {int? id,
+          String? profileId,
           Value<String?> remoteId = const Value.absent(),
           Value<String?> householdId = const Value.absent(),
           String? name,
@@ -2061,6 +2159,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
           Value<int?> clientUpdatedAt = const Value.absent()}) =>
       IncomeSource(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         remoteId: remoteId.present ? remoteId.value : this.remoteId,
         householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
@@ -2084,6 +2183,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   IncomeSource copyWithCompanion(IncomeSourcesCompanion data) {
     return IncomeSource(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       householdId:
           data.householdId.present ? data.householdId.value : this.householdId,
@@ -2113,6 +2213,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   String toString() {
     return (StringBuffer('IncomeSource(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -2133,6 +2234,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
   @override
   int get hashCode => Object.hash(
       id,
+      profileId,
       remoteId,
       householdId,
       name,
@@ -2151,6 +2253,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
       identical(this, other) ||
       (other is IncomeSource &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.remoteId == this.remoteId &&
           other.householdId == this.householdId &&
           other.name == this.name &&
@@ -2168,6 +2271,7 @@ class IncomeSource extends DataClass implements Insertable<IncomeSource> {
 
 class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String?> remoteId;
   final Value<String?> householdId;
   final Value<String> name;
@@ -2183,6 +2287,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   final Value<int?> clientUpdatedAt;
   const IncomeSourcesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.name = const Value.absent(),
@@ -2199,6 +2304,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   });
   IncomeSourcesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     required String name,
@@ -2217,6 +2323,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
         frequency = Value(frequency);
   static Insertable<IncomeSource> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? remoteId,
     Expression<String>? householdId,
     Expression<String>? name,
@@ -2233,6 +2340,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (remoteId != null) 'remote_id': remoteId,
       if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
@@ -2251,6 +2359,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
 
   IncomeSourcesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String?>? remoteId,
       Value<String?>? householdId,
       Value<String>? name,
@@ -2266,6 +2375,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
       Value<int?>? clientUpdatedAt}) {
     return IncomeSourcesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       remoteId: remoteId ?? this.remoteId,
       householdId: householdId ?? this.householdId,
       name: name ?? this.name,
@@ -2287,6 +2397,9 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -2334,6 +2447,7 @@ class IncomeSourcesCompanion extends UpdateCompanion<IncomeSource> {
   String toString() {
     return (StringBuffer('IncomeSourcesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -2367,6 +2481,14 @@ class $IncomeInstancesTable extends IncomeInstances
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _remoteIdMeta =
       const VerificationMeta('remoteId');
   @override
@@ -2461,6 +2583,7 @@ class $IncomeInstancesTable extends IncomeInstances
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         remoteId,
         householdId,
         sourceId,
@@ -2489,6 +2612,10 @@ class $IncomeInstancesTable extends IncomeInstances
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('remote_id')) {
       context.handle(_remoteIdMeta,
@@ -2583,6 +2710,8 @@ class $IncomeInstancesTable extends IncomeInstances
     return IncomeInstance(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       remoteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
       householdId: attachedDatabase.typeMapping
@@ -2624,6 +2753,7 @@ class $IncomeInstancesTable extends IncomeInstances
 
 class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   final int id;
+  final String profileId;
   final String? remoteId;
   final String? householdId;
   final int? sourceId;
@@ -2641,6 +2771,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   final int? clientUpdatedAt;
   const IncomeInstance(
       {required this.id,
+      required this.profileId,
       this.remoteId,
       this.householdId,
       this.sourceId,
@@ -2660,6 +2791,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -2701,6 +2833,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   IncomeInstancesCompanion toCompanion(bool nullToAbsent) {
     return IncomeInstancesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -2743,6 +2876,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return IncomeInstance(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       householdId: serializer.fromJson<String?>(json['householdId']),
       sourceId: serializer.fromJson<int?>(json['sourceId']),
@@ -2765,6 +2899,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'remoteId': serializer.toJson<String?>(remoteId),
       'householdId': serializer.toJson<String?>(householdId),
       'sourceId': serializer.toJson<int?>(sourceId),
@@ -2785,6 +2920,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
 
   IncomeInstance copyWith(
           {int? id,
+          String? profileId,
           Value<String?> remoteId = const Value.absent(),
           Value<String?> householdId = const Value.absent(),
           Value<int?> sourceId = const Value.absent(),
@@ -2802,6 +2938,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
           Value<int?> clientUpdatedAt = const Value.absent()}) =>
       IncomeInstance(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         remoteId: remoteId.present ? remoteId.value : this.remoteId,
         householdId: householdId.present ? householdId.value : this.householdId,
         sourceId: sourceId.present ? sourceId.value : this.sourceId,
@@ -2828,6 +2965,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   IncomeInstance copyWithCompanion(IncomeInstancesCompanion data) {
     return IncomeInstance(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       householdId:
           data.householdId.present ? data.householdId.value : this.householdId,
@@ -2863,6 +3001,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   String toString() {
     return (StringBuffer('IncomeInstance(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('sourceId: $sourceId, ')
@@ -2885,6 +3024,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
   @override
   int get hashCode => Object.hash(
       id,
+      profileId,
       remoteId,
       householdId,
       sourceId,
@@ -2905,6 +3045,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
       identical(this, other) ||
       (other is IncomeInstance &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.remoteId == this.remoteId &&
           other.householdId == this.householdId &&
           other.sourceId == this.sourceId &&
@@ -2924,6 +3065,7 @@ class IncomeInstance extends DataClass implements Insertable<IncomeInstance> {
 
 class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String?> remoteId;
   final Value<String?> householdId;
   final Value<int?> sourceId;
@@ -2941,6 +3083,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   final Value<int?> clientUpdatedAt;
   const IncomeInstancesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.sourceId = const Value.absent(),
@@ -2959,6 +3102,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   });
   IncomeInstancesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.sourceId = const Value.absent(),
@@ -2979,6 +3123,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
         date = Value(date);
   static Insertable<IncomeInstance> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? remoteId,
     Expression<String>? householdId,
     Expression<int>? sourceId,
@@ -2997,6 +3142,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (remoteId != null) 'remote_id': remoteId,
       if (householdId != null) 'household_id': householdId,
       if (sourceId != null) 'source_id': sourceId,
@@ -3017,6 +3163,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
 
   IncomeInstancesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String?>? remoteId,
       Value<String?>? householdId,
       Value<int?>? sourceId,
@@ -3034,6 +3181,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
       Value<int?>? clientUpdatedAt}) {
     return IncomeInstancesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       remoteId: remoteId ?? this.remoteId,
       householdId: householdId ?? this.householdId,
       sourceId: sourceId ?? this.sourceId,
@@ -3057,6 +3205,9 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -3110,6 +3261,7 @@ class IncomeInstancesCompanion extends UpdateCompanion<IncomeInstance> {
   String toString() {
     return (StringBuffer('IncomeInstancesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('sourceId: $sourceId, ')
@@ -3145,6 +3297,14 @@ class $CategoriesTable extends Categories
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _remoteIdMeta =
       const VerificationMeta('remoteId');
   @override
@@ -3209,6 +3369,7 @@ class $CategoriesTable extends Categories
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         remoteId,
         householdId,
         name,
@@ -3232,6 +3393,10 @@ class $CategoriesTable extends Categories
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('remote_id')) {
       context.handle(_remoteIdMeta,
@@ -3294,6 +3459,8 @@ class $CategoriesTable extends Categories
     return Category(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       remoteId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_id']),
       householdId: attachedDatabase.typeMapping
@@ -3325,6 +3492,7 @@ class $CategoriesTable extends Categories
 
 class Category extends DataClass implements Insertable<Category> {
   final int id;
+  final String profileId;
   final String? remoteId;
   final String? householdId;
   final String name;
@@ -3337,6 +3505,7 @@ class Category extends DataClass implements Insertable<Category> {
   final int? clientUpdatedAt;
   const Category(
       {required this.id,
+      required this.profileId,
       this.remoteId,
       this.householdId,
       required this.name,
@@ -3351,6 +3520,7 @@ class Category extends DataClass implements Insertable<Category> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     if (!nullToAbsent || remoteId != null) {
       map['remote_id'] = Variable<String>(remoteId);
     }
@@ -3383,6 +3553,7 @@ class Category extends DataClass implements Insertable<Category> {
   CategoriesCompanion toCompanion(bool nullToAbsent) {
     return CategoriesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       remoteId: remoteId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteId),
@@ -3414,6 +3585,7 @@ class Category extends DataClass implements Insertable<Category> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Category(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       householdId: serializer.fromJson<String?>(json['householdId']),
       name: serializer.fromJson<String>(json['name']),
@@ -3431,6 +3603,7 @@ class Category extends DataClass implements Insertable<Category> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'remoteId': serializer.toJson<String?>(remoteId),
       'householdId': serializer.toJson<String?>(householdId),
       'name': serializer.toJson<String>(name),
@@ -3446,6 +3619,7 @@ class Category extends DataClass implements Insertable<Category> {
 
   Category copyWith(
           {int? id,
+          String? profileId,
           Value<String?> remoteId = const Value.absent(),
           Value<String?> householdId = const Value.absent(),
           String? name,
@@ -3458,6 +3632,7 @@ class Category extends DataClass implements Insertable<Category> {
           Value<int?> clientUpdatedAt = const Value.absent()}) =>
       Category(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         remoteId: remoteId.present ? remoteId.value : this.remoteId,
         householdId: householdId.present ? householdId.value : this.householdId,
         name: name ?? this.name,
@@ -3478,6 +3653,7 @@ class Category extends DataClass implements Insertable<Category> {
   Category copyWithCompanion(CategoriesCompanion data) {
     return Category(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       remoteId: data.remoteId.present ? data.remoteId.value : this.remoteId,
       householdId:
           data.householdId.present ? data.householdId.value : this.householdId,
@@ -3502,6 +3678,7 @@ class Category extends DataClass implements Insertable<Category> {
   String toString() {
     return (StringBuffer('Category(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -3517,13 +3694,25 @@ class Category extends DataClass implements Insertable<Category> {
   }
 
   @override
-  int get hashCode => Object.hash(id, remoteId, householdId, name, color, icon,
-      sortOrder, updatedAtServer, deletedAtServer, deviceId, clientUpdatedAt);
+  int get hashCode => Object.hash(
+      id,
+      profileId,
+      remoteId,
+      householdId,
+      name,
+      color,
+      icon,
+      sortOrder,
+      updatedAtServer,
+      deletedAtServer,
+      deviceId,
+      clientUpdatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Category &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.remoteId == this.remoteId &&
           other.householdId == this.householdId &&
           other.name == this.name &&
@@ -3538,6 +3727,7 @@ class Category extends DataClass implements Insertable<Category> {
 
 class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String?> remoteId;
   final Value<String?> householdId;
   final Value<String> name;
@@ -3550,6 +3740,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   final Value<int?> clientUpdatedAt;
   const CategoriesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     this.name = const Value.absent(),
@@ -3563,6 +3754,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   });
   CategoriesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.householdId = const Value.absent(),
     required String name,
@@ -3576,6 +3768,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }) : name = Value(name);
   static Insertable<Category> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? remoteId,
     Expression<String>? householdId,
     Expression<String>? name,
@@ -3589,6 +3782,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (remoteId != null) 'remote_id': remoteId,
       if (householdId != null) 'household_id': householdId,
       if (name != null) 'name': name,
@@ -3604,6 +3798,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
 
   CategoriesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String?>? remoteId,
       Value<String?>? householdId,
       Value<String>? name,
@@ -3616,6 +3811,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
       Value<int?>? clientUpdatedAt}) {
     return CategoriesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       remoteId: remoteId ?? this.remoteId,
       householdId: householdId ?? this.householdId,
       name: name ?? this.name,
@@ -3634,6 +3830,9 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (remoteId.present) {
       map['remote_id'] = Variable<String>(remoteId.value);
@@ -3672,6 +3871,7 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   String toString() {
     return (StringBuffer('CategoriesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('remoteId: $remoteId, ')
           ..write('householdId: $householdId, ')
           ..write('name: $name, ')
@@ -3702,6 +3902,14 @@ class $SyncSettingsTable extends SyncSettings
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _useRemoteMeta =
       const VerificationMeta('useRemote');
   @override
@@ -3755,6 +3963,7 @@ class $SyncSettingsTable extends SyncSettings
   @override
   List<GeneratedColumn> get $columns => [
         id,
+        profileId,
         useRemote,
         baseUrl,
         apiKey,
@@ -3775,6 +3984,10 @@ class $SyncSettingsTable extends SyncSettings
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('use_remote')) {
       context.handle(_useRemoteMeta,
@@ -3817,6 +4030,8 @@ class $SyncSettingsTable extends SyncSettings
     return SyncSetting(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       useRemote: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}use_remote'])!,
       baseUrl: attachedDatabase.typeMapping
@@ -3842,6 +4057,7 @@ class $SyncSettingsTable extends SyncSettings
 
 class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   final int id;
+  final String profileId;
   final bool useRemote;
   final String? baseUrl;
   final String? apiKey;
@@ -3851,6 +4067,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   final String? deviceId;
   const SyncSetting(
       {required this.id,
+      required this.profileId,
       required this.useRemote,
       this.baseUrl,
       this.apiKey,
@@ -3862,6 +4079,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     map['use_remote'] = Variable<bool>(useRemote);
     if (!nullToAbsent || baseUrl != null) {
       map['base_url'] = Variable<String>(baseUrl);
@@ -3881,6 +4099,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   SyncSettingsCompanion toCompanion(bool nullToAbsent) {
     return SyncSettingsCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       useRemote: Value(useRemote),
       baseUrl: baseUrl == null && nullToAbsent
           ? const Value.absent()
@@ -3901,6 +4120,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SyncSetting(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       useRemote: serializer.fromJson<bool>(json['useRemote']),
       baseUrl: serializer.fromJson<String?>(json['baseUrl']),
       apiKey: serializer.fromJson<String?>(json['apiKey']),
@@ -3915,6 +4135,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'useRemote': serializer.toJson<bool>(useRemote),
       'baseUrl': serializer.toJson<String?>(baseUrl),
       'apiKey': serializer.toJson<String?>(apiKey),
@@ -3927,6 +4148,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
 
   SyncSetting copyWith(
           {int? id,
+          String? profileId,
           bool? useRemote,
           Value<String?> baseUrl = const Value.absent(),
           Value<String?> apiKey = const Value.absent(),
@@ -3936,6 +4158,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
           Value<String?> deviceId = const Value.absent()}) =>
       SyncSetting(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         useRemote: useRemote ?? this.useRemote,
         baseUrl: baseUrl.present ? baseUrl.value : this.baseUrl,
         apiKey: apiKey.present ? apiKey.value : this.apiKey,
@@ -3947,6 +4170,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   SyncSetting copyWithCompanion(SyncSettingsCompanion data) {
     return SyncSetting(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       useRemote: data.useRemote.present ? data.useRemote.value : this.useRemote,
       baseUrl: data.baseUrl.present ? data.baseUrl.value : this.baseUrl,
       apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
@@ -3963,6 +4187,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   String toString() {
     return (StringBuffer('SyncSetting(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('useRemote: $useRemote, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
@@ -3975,13 +4200,14 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
   }
 
   @override
-  int get hashCode => Object.hash(id, useRemote, baseUrl, apiKey, mode,
-      updatedAt, lastSyncServerMs, deviceId);
+  int get hashCode => Object.hash(id, profileId, useRemote, baseUrl, apiKey,
+      mode, updatedAt, lastSyncServerMs, deviceId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is SyncSetting &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.useRemote == this.useRemote &&
           other.baseUrl == this.baseUrl &&
           other.apiKey == this.apiKey &&
@@ -3993,6 +4219,7 @@ class SyncSetting extends DataClass implements Insertable<SyncSetting> {
 
 class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<bool> useRemote;
   final Value<String?> baseUrl;
   final Value<String?> apiKey;
@@ -4002,6 +4229,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   final Value<String?> deviceId;
   const SyncSettingsCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.useRemote = const Value.absent(),
     this.baseUrl = const Value.absent(),
     this.apiKey = const Value.absent(),
@@ -4012,6 +4240,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   });
   SyncSettingsCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.useRemote = const Value.absent(),
     this.baseUrl = const Value.absent(),
     this.apiKey = const Value.absent(),
@@ -4022,6 +4251,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   });
   static Insertable<SyncSetting> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<bool>? useRemote,
     Expression<String>? baseUrl,
     Expression<String>? apiKey,
@@ -4032,6 +4262,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (useRemote != null) 'use_remote': useRemote,
       if (baseUrl != null) 'base_url': baseUrl,
       if (apiKey != null) 'api_key': apiKey,
@@ -4044,6 +4275,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
 
   SyncSettingsCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<bool>? useRemote,
       Value<String?>? baseUrl,
       Value<String?>? apiKey,
@@ -4053,6 +4285,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
       Value<String?>? deviceId}) {
     return SyncSettingsCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       useRemote: useRemote ?? this.useRemote,
       baseUrl: baseUrl ?? this.baseUrl,
       apiKey: apiKey ?? this.apiKey,
@@ -4068,6 +4301,9 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (useRemote.present) {
       map['use_remote'] = Variable<bool>(useRemote.value);
@@ -4097,6 +4333,7 @@ class SyncSettingsCompanion extends UpdateCompanion<SyncSetting> {
   String toString() {
     return (StringBuffer('SyncSettingsCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('useRemote: $useRemote, ')
           ..write('baseUrl: $baseUrl, ')
           ..write('apiKey: $apiKey, ')
@@ -4124,6 +4361,14 @@ class $OutboxEntriesTable extends OutboxEntries
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _profileIdMeta =
+      const VerificationMeta('profileId');
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+      'profile_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('remote'));
   static const VerificationMeta _entityTypeMeta =
       const VerificationMeta('entityType');
   @override
@@ -4157,7 +4402,7 @@ class $OutboxEntriesTable extends OutboxEntries
       defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, entityType, entityId, op, payloadJson, queuedAt];
+      [id, profileId, entityType, entityId, op, payloadJson, queuedAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -4170,6 +4415,10 @@ class $OutboxEntriesTable extends OutboxEntries
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('profile_id')) {
+      context.handle(_profileIdMeta,
+          profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta));
     }
     if (data.containsKey('entity_type')) {
       context.handle(
@@ -4211,6 +4460,8 @@ class $OutboxEntriesTable extends OutboxEntries
     return OutboxEntry(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      profileId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}profile_id'])!,
       entityType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}entity_type'])!,
       entityId: attachedDatabase.typeMapping
@@ -4232,6 +4483,7 @@ class $OutboxEntriesTable extends OutboxEntries
 
 class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   final int id;
+  final String profileId;
   final String entityType;
   final String entityId;
   final String op;
@@ -4239,6 +4491,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   final DateTime queuedAt;
   const OutboxEntry(
       {required this.id,
+      required this.profileId,
       required this.entityType,
       required this.entityId,
       required this.op,
@@ -4248,6 +4501,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     map['entity_type'] = Variable<String>(entityType);
     map['entity_id'] = Variable<String>(entityId);
     map['op'] = Variable<String>(op);
@@ -4261,6 +4515,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   OutboxEntriesCompanion toCompanion(bool nullToAbsent) {
     return OutboxEntriesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       entityType: Value(entityType),
       entityId: Value(entityId),
       op: Value(op),
@@ -4276,6 +4531,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return OutboxEntry(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       entityType: serializer.fromJson<String>(json['entityType']),
       entityId: serializer.fromJson<String>(json['entityId']),
       op: serializer.fromJson<String>(json['op']),
@@ -4288,6 +4544,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'entityType': serializer.toJson<String>(entityType),
       'entityId': serializer.toJson<String>(entityId),
       'op': serializer.toJson<String>(op),
@@ -4298,6 +4555,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
 
   OutboxEntry copyWith(
           {int? id,
+          String? profileId,
           String? entityType,
           String? entityId,
           String? op,
@@ -4305,6 +4563,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
           DateTime? queuedAt}) =>
       OutboxEntry(
         id: id ?? this.id,
+        profileId: profileId ?? this.profileId,
         entityType: entityType ?? this.entityType,
         entityId: entityId ?? this.entityId,
         op: op ?? this.op,
@@ -4314,6 +4573,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   OutboxEntry copyWithCompanion(OutboxEntriesCompanion data) {
     return OutboxEntry(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       entityType:
           data.entityType.present ? data.entityType.value : this.entityType,
       entityId: data.entityId.present ? data.entityId.value : this.entityId,
@@ -4328,6 +4588,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   String toString() {
     return (StringBuffer('OutboxEntry(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
           ..write('op: $op, ')
@@ -4338,13 +4599,14 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, entityType, entityId, op, payloadJson, queuedAt);
+  int get hashCode => Object.hash(
+      id, profileId, entityType, entityId, op, payloadJson, queuedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is OutboxEntry &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.entityType == this.entityType &&
           other.entityId == this.entityId &&
           other.op == this.op &&
@@ -4354,6 +4616,7 @@ class OutboxEntry extends DataClass implements Insertable<OutboxEntry> {
 
 class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String> entityType;
   final Value<String> entityId;
   final Value<String> op;
@@ -4361,6 +4624,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
   final Value<DateTime> queuedAt;
   const OutboxEntriesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.entityType = const Value.absent(),
     this.entityId = const Value.absent(),
     this.op = const Value.absent(),
@@ -4369,6 +4633,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
   });
   OutboxEntriesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     required String entityType,
     required String entityId,
     required String op,
@@ -4379,6 +4644,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
         op = Value(op);
   static Insertable<OutboxEntry> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? entityType,
     Expression<String>? entityId,
     Expression<String>? op,
@@ -4387,6 +4653,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (entityType != null) 'entity_type': entityType,
       if (entityId != null) 'entity_id': entityId,
       if (op != null) 'op': op,
@@ -4397,6 +4664,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
 
   OutboxEntriesCompanion copyWith(
       {Value<int>? id,
+      Value<String>? profileId,
       Value<String>? entityType,
       Value<String>? entityId,
       Value<String>? op,
@@ -4404,6 +4672,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
       Value<DateTime>? queuedAt}) {
     return OutboxEntriesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       entityType: entityType ?? this.entityType,
       entityId: entityId ?? this.entityId,
       op: op ?? this.op,
@@ -4417,6 +4686,9 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (entityType.present) {
       map['entity_type'] = Variable<String>(entityType.value);
@@ -4440,6 +4712,7 @@ class OutboxEntriesCompanion extends UpdateCompanion<OutboxEntry> {
   String toString() {
     return (StringBuffer('OutboxEntriesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
           ..write('op: $op, ')
@@ -4479,6 +4752,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$BillTemplatesTableCreateCompanionBuilder = BillTemplatesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   required String name,
@@ -4497,6 +4771,7 @@ typedef $$BillTemplatesTableCreateCompanionBuilder = BillTemplatesCompanion
 typedef $$BillTemplatesTableUpdateCompanionBuilder = BillTemplatesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<String> name,
@@ -4524,6 +4799,9 @@ class $$BillTemplatesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnFilters(column));
@@ -4586,6 +4864,9 @@ class $$BillTemplatesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnOrderings(column));
 
@@ -4646,6 +4927,9 @@ class $$BillTemplatesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -4717,6 +5001,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
               $$BillTemplatesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
@@ -4734,6 +5019,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
           }) =>
               BillTemplatesCompanion(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -4751,6 +5037,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             required String name,
@@ -4768,6 +5055,7 @@ class $$BillTemplatesTableTableManager extends RootTableManager<
           }) =>
               BillTemplatesCompanion.insert(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -4808,6 +5096,7 @@ typedef $$BillTemplatesTableProcessedTableManager = ProcessedTableManager<
 typedef $$BillInstancesTableCreateCompanionBuilder = BillInstancesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<int?> templateId,
@@ -4830,6 +5119,7 @@ typedef $$BillInstancesTableCreateCompanionBuilder = BillInstancesCompanion
 typedef $$BillInstancesTableUpdateCompanionBuilder = BillInstancesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<int?> templateId,
@@ -4861,6 +5151,9 @@ class $$BillInstancesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnFilters(column));
@@ -4935,6 +5228,9 @@ class $$BillInstancesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnOrderings(column));
 
@@ -5008,6 +5304,9 @@ class $$BillInstancesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -5091,6 +5390,7 @@ class $$BillInstancesTableTableManager extends RootTableManager<
               $$BillInstancesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<int?> templateId = const Value.absent(),
@@ -5112,6 +5412,7 @@ class $$BillInstancesTableTableManager extends RootTableManager<
           }) =>
               BillInstancesCompanion(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             templateId: templateId,
@@ -5133,6 +5434,7 @@ class $$BillInstancesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<int?> templateId = const Value.absent(),
@@ -5154,6 +5456,7 @@ class $$BillInstancesTableTableManager extends RootTableManager<
           }) =>
               BillInstancesCompanion.insert(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             templateId: templateId,
@@ -5198,6 +5501,7 @@ typedef $$BillInstancesTableProcessedTableManager = ProcessedTableManager<
 typedef $$IncomeSourcesTableCreateCompanionBuilder = IncomeSourcesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   required String name,
@@ -5215,6 +5519,7 @@ typedef $$IncomeSourcesTableCreateCompanionBuilder = IncomeSourcesCompanion
 typedef $$IncomeSourcesTableUpdateCompanionBuilder = IncomeSourcesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<String> name,
@@ -5241,6 +5546,9 @@ class $$IncomeSourcesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnFilters(column));
@@ -5297,6 +5605,9 @@ class $$IncomeSourcesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnOrderings(column));
 
@@ -5351,6 +5662,9 @@ class $$IncomeSourcesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -5419,6 +5733,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
               $$IncomeSourcesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
@@ -5435,6 +5750,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
           }) =>
               IncomeSourcesCompanion(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -5451,6 +5767,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             required String name,
@@ -5467,6 +5784,7 @@ class $$IncomeSourcesTableTableManager extends RootTableManager<
           }) =>
               IncomeSourcesCompanion.insert(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -5506,6 +5824,7 @@ typedef $$IncomeSourcesTableProcessedTableManager = ProcessedTableManager<
 typedef $$IncomeInstancesTableCreateCompanionBuilder = IncomeInstancesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<int?> sourceId,
@@ -5525,6 +5844,7 @@ typedef $$IncomeInstancesTableCreateCompanionBuilder = IncomeInstancesCompanion
 typedef $$IncomeInstancesTableUpdateCompanionBuilder = IncomeInstancesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<int?> sourceId,
@@ -5553,6 +5873,9 @@ class $$IncomeInstancesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnFilters(column));
@@ -5616,6 +5939,9 @@ class $$IncomeInstancesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnOrderings(column));
 
@@ -5678,6 +6004,9 @@ class $$IncomeInstancesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -5753,6 +6082,7 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
               $$IncomeInstancesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<int?> sourceId = const Value.absent(),
@@ -5771,6 +6101,7 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
           }) =>
               IncomeInstancesCompanion(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             sourceId: sourceId,
@@ -5789,6 +6120,7 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<int?> sourceId = const Value.absent(),
@@ -5807,6 +6139,7 @@ class $$IncomeInstancesTableTableManager extends RootTableManager<
           }) =>
               IncomeInstancesCompanion.insert(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             sourceId: sourceId,
@@ -5847,6 +6180,7 @@ typedef $$IncomeInstancesTableProcessedTableManager = ProcessedTableManager<
     PrefetchHooks Function()>;
 typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   required String name,
@@ -5860,6 +6194,7 @@ typedef $$CategoriesTableCreateCompanionBuilder = CategoriesCompanion Function({
 });
 typedef $$CategoriesTableUpdateCompanionBuilder = CategoriesCompanion Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String?> remoteId,
   Value<String?> householdId,
   Value<String> name,
@@ -5883,6 +6218,9 @@ class $$CategoriesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnFilters(column));
@@ -5930,6 +6268,9 @@ class $$CategoriesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get remoteId => $composableBuilder(
       column: $table.remoteId, builder: (column) => ColumnOrderings(column));
 
@@ -5975,6 +6316,9 @@ class $$CategoriesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get remoteId =>
       $composableBuilder(column: $table.remoteId, builder: (column) => column);
@@ -6031,6 +6375,7 @@ class $$CategoriesTableTableManager extends RootTableManager<
               $$CategoriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             Value<String> name = const Value.absent(),
@@ -6044,6 +6389,7 @@ class $$CategoriesTableTableManager extends RootTableManager<
           }) =>
               CategoriesCompanion(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -6057,6 +6403,7 @@ class $$CategoriesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String?> remoteId = const Value.absent(),
             Value<String?> householdId = const Value.absent(),
             required String name,
@@ -6070,6 +6417,7 @@ class $$CategoriesTableTableManager extends RootTableManager<
           }) =>
               CategoriesCompanion.insert(
             id: id,
+            profileId: profileId,
             remoteId: remoteId,
             householdId: householdId,
             name: name,
@@ -6103,6 +6451,7 @@ typedef $$CategoriesTableProcessedTableManager = ProcessedTableManager<
 typedef $$SyncSettingsTableCreateCompanionBuilder = SyncSettingsCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<bool> useRemote,
   Value<String?> baseUrl,
   Value<String?> apiKey,
@@ -6114,6 +6463,7 @@ typedef $$SyncSettingsTableCreateCompanionBuilder = SyncSettingsCompanion
 typedef $$SyncSettingsTableUpdateCompanionBuilder = SyncSettingsCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<bool> useRemote,
   Value<String?> baseUrl,
   Value<String?> apiKey,
@@ -6134,6 +6484,9 @@ class $$SyncSettingsTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get useRemote => $composableBuilder(
       column: $table.useRemote, builder: (column) => ColumnFilters(column));
@@ -6170,6 +6523,9 @@ class $$SyncSettingsTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get useRemote => $composableBuilder(
       column: $table.useRemote, builder: (column) => ColumnOrderings(column));
 
@@ -6204,6 +6560,9 @@ class $$SyncSettingsTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<bool> get useRemote =>
       $composableBuilder(column: $table.useRemote, builder: (column) => column);
@@ -6254,6 +6613,7 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
               $$SyncSettingsTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<bool> useRemote = const Value.absent(),
             Value<String?> baseUrl = const Value.absent(),
             Value<String?> apiKey = const Value.absent(),
@@ -6264,6 +6624,7 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
           }) =>
               SyncSettingsCompanion(
             id: id,
+            profileId: profileId,
             useRemote: useRemote,
             baseUrl: baseUrl,
             apiKey: apiKey,
@@ -6274,6 +6635,7 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<bool> useRemote = const Value.absent(),
             Value<String?> baseUrl = const Value.absent(),
             Value<String?> apiKey = const Value.absent(),
@@ -6284,6 +6646,7 @@ class $$SyncSettingsTableTableManager extends RootTableManager<
           }) =>
               SyncSettingsCompanion.insert(
             id: id,
+            profileId: profileId,
             useRemote: useRemote,
             baseUrl: baseUrl,
             apiKey: apiKey,
@@ -6317,6 +6680,7 @@ typedef $$SyncSettingsTableProcessedTableManager = ProcessedTableManager<
 typedef $$OutboxEntriesTableCreateCompanionBuilder = OutboxEntriesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   required String entityType,
   required String entityId,
   required String op,
@@ -6326,6 +6690,7 @@ typedef $$OutboxEntriesTableCreateCompanionBuilder = OutboxEntriesCompanion
 typedef $$OutboxEntriesTableUpdateCompanionBuilder = OutboxEntriesCompanion
     Function({
   Value<int> id,
+  Value<String> profileId,
   Value<String> entityType,
   Value<String> entityId,
   Value<String> op,
@@ -6344,6 +6709,9 @@ class $$OutboxEntriesTableFilterComposer
   });
   ColumnFilters<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get entityType => $composableBuilder(
       column: $table.entityType, builder: (column) => ColumnFilters(column));
@@ -6373,6 +6741,9 @@ class $$OutboxEntriesTableOrderingComposer
   ColumnOrderings<int> get id => $composableBuilder(
       column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get profileId => $composableBuilder(
+      column: $table.profileId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get entityType => $composableBuilder(
       column: $table.entityType, builder: (column) => ColumnOrderings(column));
 
@@ -6400,6 +6771,9 @@ class $$OutboxEntriesTableAnnotationComposer
   });
   GeneratedColumn<int> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
   GeneratedColumn<String> get entityType => $composableBuilder(
       column: $table.entityType, builder: (column) => column);
@@ -6444,6 +6818,7 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
               $$OutboxEntriesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             Value<String> entityType = const Value.absent(),
             Value<String> entityId = const Value.absent(),
             Value<String> op = const Value.absent(),
@@ -6452,6 +6827,7 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
           }) =>
               OutboxEntriesCompanion(
             id: id,
+            profileId: profileId,
             entityType: entityType,
             entityId: entityId,
             op: op,
@@ -6460,6 +6836,7 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
+            Value<String> profileId = const Value.absent(),
             required String entityType,
             required String entityId,
             required String op,
@@ -6468,6 +6845,7 @@ class $$OutboxEntriesTableTableManager extends RootTableManager<
           }) =>
               OutboxEntriesCompanion.insert(
             id: id,
+            profileId: profileId,
             entityType: entityType,
             entityId: entityId,
             op: op,
