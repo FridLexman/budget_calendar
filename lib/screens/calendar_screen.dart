@@ -155,6 +155,8 @@ class _CalendarBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String dateOnly(String s) => s.length >= 10 ? s.substring(0, 10) : s;
+    final monthKey =
+        '${focusedMonth.year}-${focusedMonth.month.toString().padLeft(2, '0')}';
     final markers = <String, _DayInfo>{};
     for (final b in monthRows.where((r) => r.status != 'skipped')) {
       final key = dateOnly(b.dueDate);
@@ -165,6 +167,8 @@ class _CalendarBody extends StatelessWidget {
         hasPaid: info.hasPaid || b.status == 'paid' || b.status == 'partial',
       );
     }
+    debugPrint(
+        '[calendar] month=$monthKey instances=${monthRows.length} (day markers=${markers.length})');
 
     return Column(
       children: [
@@ -240,11 +244,6 @@ class _CalendarBody extends StatelessWidget {
             titleCentered: true,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: _MonthSummaryBanner(rows: monthRows),
-        ),
-        const Divider(height: 1),
         Expanded(
           child: isLoadingMonth
               ? const Center(child: CircularProgressIndicator())
@@ -259,37 +258,6 @@ class _DayInfo {
   final int count;
   final bool hasPaid;
   _DayInfo({required this.count, required this.hasPaid});
-}
-
-class _MonthSummaryBanner extends StatelessWidget {
-  final List<BillInstance> rows;
-  const _MonthSummaryBanner({required this.rows});
-
-  @override
-  Widget build(BuildContext context) {
-    String dateOnly(String s) => s.length >= 10 ? s.substring(0, 10) : s;
-    final preview = rows.take(5).toList()
-      ..sort((a, b) => dateOnly(a.dueDate).compareTo(dateOnly(b.dueDate)));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'This month: ${rows.length} bill instances',
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-        if (preview.isNotEmpty)
-          ...preview.map((b) => Text(
-                '${b.dueDate}: ${b.titleSnapshot}',
-                style: Theme.of(context).textTheme.bodySmall,
-              )),
-        if (preview.isEmpty)
-          Text(
-            'No instances loaded for this month',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-      ],
-    );
-  }
 }
 
 Widget _buildDaySummaryFromMonth(
