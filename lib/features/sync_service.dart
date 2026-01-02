@@ -342,7 +342,8 @@ class SyncService {
         if (existingByName == null) {
           await db.into(db.categories).insert(companion);
         } else {
-          await (db.update(db.categories)..where((t) => t.id.equals(existingByName.id))).write(companion);
+          final existing = existingByName;
+          await (db.update(db.categories)..where((t) => t.id.equals(existing.id))).write(companion);
         }
       }
 
