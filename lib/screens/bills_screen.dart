@@ -99,7 +99,13 @@ class BillsScreen extends ConsumerWidget {
                       .map((t) => _buildTemplateCard(context, db, t)),
                 ],
                 const SizedBox(height: 16),
-                _buildInstancesSection(db),
+                _buildInstancesSection(
+                  context: context,
+                  db: db,
+                  startDate: ymd(DateTime.now().copyWith(day: 1)),
+                  endDate: ymd(DateTime(
+                      DateTime.now().year, DateTime.now().month + 1, 0)),
+                ),
               ],
             );
           },
@@ -216,21 +222,26 @@ class BillsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildInstancesSection(AppDatabase db) {
+  Widget _buildInstancesSection({
+    required BuildContext context,
+    required AppDatabase db,
+    required String startDate,
+    required String endDate,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'Instances (all, latest 100)',
+            'This month' 's instances',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
         StreamBuilder<List<BillInstance>>(
-          stream: db.watchAllBillInstances(),
+          stream: db.watchBillInstancesForMonth(startDate, endDate),
           builder: (context, snap) {
-            final rows = (snap.data ?? []).take(100).toList();
+            final rows = snap.data ?? const <BillInstance>[];
             if (rows.isEmpty) {
               return const Text(
                   'No bill instances found in the local database.');
@@ -243,28 +254,61 @@ class BillsScreen extends ConsumerWidget {
                 final b = rows[idx];
                 final isPaid = b.status == 'paid';
                 final isPartial = b.status == 'partial';
-                return ListTile(
-                  leading: Icon(
-                    isPaid
-                        ? Icons.check_circle
-                        : isPartial
-                            ? Icons.adjust
-                            : Icons.schedule,
-                    color: isPaid
-                        ? Colors.green
-                        : isPartial
-                            ? Colors.orange
-                            : Colors.grey[600],
-                  ),
-                  title: Text(b.titleSnapshot),
-                  subtitle:
-                      Text('${b.dueDate} • ${b.category ?? 'Uncategorized'}'),
-                  trailing: Text(
-                    formatCents(b.amountCents),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isPaid ? Colors.green : null,
+                final isSkipped = b.status == 'skipped';
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    leading: Icon(
+                      isPaid
+                          ? Icons.check_circle
+                          : isPartial
+                              ? Icons.adjust
+                              : isSkipped
+                                  ? Icons.remove_circle
+                                  : Icons.schedule,
+                      color: isPaid
+                          ? Colors.green
+                          : isPartial
+                              ? Colors.orange
+                              : isSkipped
+                                  ? Colors.grey
+                                  : Colors.grey[600],
                     ),
+                    title: Text(b.titleSnapshot),
+                    subtitle:
+                        Text('${b.dueDate} - ${b.category ?? 'Uncategorized'}'),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          formatCents(b.amountCents),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isPaid ? Colors.green : null,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _statusColor(context, b.status)
+                                .withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            b.status,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: _statusColor(context, b.status),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () => _showInstanceActions(context, db, b),
                   ),
                 );
               },
@@ -795,5 +839,100 @@ class BillsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _showInstanceActions(
+      BuildContext context, AppDatabase db, BillInstance b) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text(b.titleSnapshot,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('${b.dueDate} - ${b.category ?? 'Uncategorized'}'),
+              trailing: Text(formatCents(b.amountCents)),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.check_circle, color: Colors.green),
+              title: const Text('Mark paid'),
+              onTap: () async {
+                Navigator.pop(context);
+                await db.markBillPaid(
+                    instanceId: b.id, paidAmountCents: b.amountCents);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule, color: Colors.blue),
+              title: const Text('Mark unpaid'),
+              onTap: () async {
+                Navigator.pop(context);
+                await db.markBillUnpaid(instanceId: b.id);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                b.status == 'skipped' ? Icons.undo : Icons.remove_circle,
+                color: Colors.orange,
+              ),
+              title: Text(b.status == 'skipped' ? 'Unskip' : 'Skip'),
+              onTap: () async {
+                Navigator.pop(context);
+                if (b.status == 'skipped') {
+                  await db.unskipBillInstance(instanceId: b.id);
+                } else {
+                  await db.skipBillInstance(instanceId: b.id);
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Delete instance'),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete bill instance'),
+                    content:
+                        Text('Delete "${b.titleSnapshot}" due ${b.dueDate}?'),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel')),
+                      FilledButton(
+                        style:
+                            FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await db.deleteBillInstance(b.id);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Color _statusColor(BuildContext context, String status) {
+  switch (status) {
+    case 'paid':
+      return Colors.green;
+    case 'partial':
+      return Colors.orange;
+    case 'skipped':
+      return Colors.grey;
+    default:
+      return Theme.of(context).colorScheme.primary;
   }
 }
