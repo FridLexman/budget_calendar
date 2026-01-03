@@ -1,11 +1,10 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
-import 'package:drift/wasm.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sqlite3/wasm.dart';
 import 'package:uuid/uuid.dart';
+
+import 'connection_factory.dart';
 
 part 'app_database.g.dart';
 
@@ -20,6 +19,7 @@ class BillTemplates extends Table {
   IntColumn get defaultAmountCents => integer()();
   TextColumn get startDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
+
   /// JSON string, e.g. {"type":"monthly","day":1}
   TextColumn get recurrenceRule => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -39,7 +39,8 @@ class BillInstances extends Table {
   TextColumn get titleSnapshot => text()();
   IntColumn get amountCents => integer()();
   TextColumn get dueDate => text()(); // YYYY-MM-DD
-  TextColumn get status => text().withDefault(const Constant('scheduled'))(); // scheduled|paid|skipped|partial
+  TextColumn get status => text().withDefault(
+      const Constant('scheduled'))(); // scheduled|paid|skipped|partial
   IntColumn get paidAmountCents => integer().nullable()();
   DateTimeColumn get paidAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
@@ -59,7 +60,8 @@ class IncomeSources extends Table {
   TextColumn get householdId => text().nullable()();
   TextColumn get name => text()();
   IntColumn get amountCents => integer()();
-  TextColumn get frequency => text()(); // monthly|weekly|biweekly|one_time|yearly
+  TextColumn get frequency =>
+      text()(); // monthly|weekly|biweekly|one_time|yearly
   TextColumn get startDate => text().nullable()(); // YYYY-MM-DD
   TextColumn get anchorDate => text().nullable()(); // YYYY-MM-DD
   BoolColumn get active => boolean().withDefault(const Constant(true))();
@@ -80,7 +82,8 @@ class IncomeInstances extends Table {
   TextColumn get titleSnapshot => text()();
   IntColumn get amountCents => integer()();
   TextColumn get date => text()(); // YYYY-MM-DD
-  TextColumn get status => text().withDefault(const Constant('expected'))(); // expected|received|skipped
+  TextColumn get status => text()
+      .withDefault(const Constant('expected'))(); // expected|received|skipped
   DateTimeColumn get receivedAt => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -111,7 +114,8 @@ class SyncSettings extends Table {
   BoolColumn get useRemote => boolean().withDefault(const Constant(false))();
   TextColumn get baseUrl => text().nullable()();
   TextColumn get apiKey => text().nullable()();
-  TextColumn get mode => text().withDefault(const Constant('local_only'))(); // local_only | hybrid
+  TextColumn get mode =>
+      text().withDefault(const Constant('local_only'))(); // local_only | hybrid
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   IntColumn get lastSyncServerMs => integer().withDefault(const Constant(0))();
   TextColumn get deviceId => text().nullable()();
@@ -127,7 +131,15 @@ class OutboxEntries extends Table {
   DateTimeColumn get queuedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [BillTemplates, BillInstances, IncomeSources, IncomeInstances, Categories, SyncSettings, OutboxEntries])
+@DriftDatabase(tables: [
+  BillTemplates,
+  BillInstances,
+  IncomeSources,
+  IncomeInstances,
+  Categories,
+  SyncSettings,
+  OutboxEntries
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -136,23 +148,15 @@ class AppDatabase extends _$AppDatabase {
   void setActiveProfile(String profileId) {
     activeProfileId = profileId;
   }
+
   String get profile => activeProfileId;
 
   static Future<AppDatabase> open() async {
-    if (kIsWeb) {
-      // Remote-only for web: use an in-memory wasm sqlite just to satisfy Drift,
-      // but expect all data to come from the remote API.
-      final sqlite3 = await WasmSqlite3.loadFromUrl(Uri.parse('sqlite3.wasm'));
-      return AppDatabase(WasmDatabase(sqlite3: sqlite3, path: 'budget_calendar_web'));
-    }
-
-    final executor = driftDatabase(
-      name: 'budget_calendar.db',
-      native: const DriftNativeOptions(),
-    );
-
+    final executor = await createExecutor();
     final db = AppDatabase(executor);
-    await db.customStatement("PRAGMA foreign_keys = ON;");
+    if (!kIsWeb) {
+      await db.customStatement("PRAGMA foreign_keys = ON;");
+    }
     return db;
   }
 
@@ -161,103 +165,111 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async {
-      await m.createAll();
-      await _seedCategories(profileId: 'remote');
-      await into(syncSettings).insert(
-        SyncSettingsCompanion(
-          useRemote: const Value(false),
-          mode: const Value('local_only'),
-        ),
+        onCreate: (m) async {
+          await m.createAll();
+          await _seedCategories(profileId: 'remote');
+          await into(syncSettings).insert(
+            SyncSettingsCompanion(
+              useRemote: const Value(false),
+              mode: const Value('local_only'),
+            ),
+          );
+          await _createRemoteIdIndexes(m);
+        },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(billTemplates, billTemplates.startDate);
+            await m.addColumn(incomeSources, incomeSources.startDate);
+          }
+          if (from < 3) {
+            await m.createTable(syncSettings);
+            await into(syncSettings).insert(
+              SyncSettingsCompanion(
+                useRemote: const Value(false),
+                mode: const Value('local_only'),
+              ),
+            );
+          }
+          if (from < 4) {
+            await m.createTable(outboxEntries);
+            await m.addColumn(categories, categories.remoteId);
+            await m.addColumn(categories, categories.householdId);
+            await m.addColumn(categories, categories.updatedAtServer);
+            await m.addColumn(categories, categories.deletedAtServer);
+            await m.addColumn(categories, categories.deviceId);
+            await m.addColumn(categories, categories.clientUpdatedAt);
+
+            await m.addColumn(billTemplates, billTemplates.remoteId);
+            await m.addColumn(billTemplates, billTemplates.householdId);
+            await m.addColumn(billTemplates, billTemplates.categoryRemoteId);
+            await m.addColumn(billTemplates, billTemplates.updatedAtServer);
+            await m.addColumn(billTemplates, billTemplates.deletedAtServer);
+            await m.addColumn(billTemplates, billTemplates.deviceId);
+            await m.addColumn(billTemplates, billTemplates.clientUpdatedAt);
+
+            await m.addColumn(billInstances, billInstances.remoteId);
+            await m.addColumn(billInstances, billInstances.householdId);
+            await m.addColumn(billInstances, billInstances.templateRemoteId);
+            await m.addColumn(billInstances, billInstances.categoryRemoteId);
+            await m.addColumn(billInstances, billInstances.updatedAtServer);
+            await m.addColumn(billInstances, billInstances.deletedAtServer);
+            await m.addColumn(billInstances, billInstances.deviceId);
+            await m.addColumn(billInstances, billInstances.clientUpdatedAt);
+
+            await m.addColumn(incomeSources, incomeSources.remoteId);
+            await m.addColumn(incomeSources, incomeSources.householdId);
+            await m.addColumn(incomeSources, incomeSources.updatedAtServer);
+            await m.addColumn(incomeSources, incomeSources.deletedAtServer);
+            await m.addColumn(incomeSources, incomeSources.deviceId);
+            await m.addColumn(incomeSources, incomeSources.clientUpdatedAt);
+
+            await m.addColumn(incomeInstances, incomeInstances.remoteId);
+            await m.addColumn(incomeInstances, incomeInstances.householdId);
+            await m.addColumn(incomeInstances, incomeInstances.sourceRemoteId);
+            await m.addColumn(incomeInstances, incomeInstances.updatedAtServer);
+            await m.addColumn(incomeInstances, incomeInstances.deletedAtServer);
+            await m.addColumn(incomeInstances, incomeInstances.deviceId);
+            await m.addColumn(incomeInstances, incomeInstances.clientUpdatedAt);
+
+            await m.addColumn(syncSettings, syncSettings.lastSyncServerMs);
+            await m.addColumn(syncSettings, syncSettings.deviceId);
+
+            // Backfill remote IDs for existing rows.
+            await ensureRemoteIdsForAll();
+            await _createRemoteIdIndexes(m);
+          }
+          if (from < 5) {
+            await m.addColumn(categories, categories.profileId);
+            await m.addColumn(billTemplates, billTemplates.profileId);
+            await m.addColumn(billInstances, billInstances.profileId);
+            await m.addColumn(incomeSources, incomeSources.profileId);
+            await m.addColumn(incomeInstances, incomeInstances.profileId);
+            await m.addColumn(syncSettings, syncSettings.profileId);
+            await m.addColumn(outboxEntries, outboxEntries.profileId);
+            // Set existing rows to remote profile
+            await customStatement(
+                "UPDATE categories SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE bill_templates SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE bill_instances SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE income_sources SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE income_instances SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE sync_settings SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await customStatement(
+                "UPDATE outbox_entries SET profile_id = 'remote' WHERE profile_id IS NULL;");
+            await _createRemoteIdIndexes(m);
+          }
+        },
       );
-      await _createRemoteIdIndexes(m);
-    },
-    onUpgrade: (m, from, to) async {
-      if (from < 2) {
-        await m.addColumn(billTemplates, billTemplates.startDate);
-        await m.addColumn(incomeSources, incomeSources.startDate);
-      }
-      if (from < 3) {
-        await m.createTable(syncSettings);
-        await into(syncSettings).insert(
-          SyncSettingsCompanion(
-            useRemote: const Value(false),
-            mode: const Value('local_only'),
-          ),
-        );
-      }
-      if (from < 4) {
-        await m.createTable(outboxEntries);
-        await m.addColumn(categories, categories.remoteId);
-        await m.addColumn(categories, categories.householdId);
-        await m.addColumn(categories, categories.updatedAtServer);
-        await m.addColumn(categories, categories.deletedAtServer);
-        await m.addColumn(categories, categories.deviceId);
-        await m.addColumn(categories, categories.clientUpdatedAt);
-
-        await m.addColumn(billTemplates, billTemplates.remoteId);
-        await m.addColumn(billTemplates, billTemplates.householdId);
-        await m.addColumn(billTemplates, billTemplates.categoryRemoteId);
-        await m.addColumn(billTemplates, billTemplates.updatedAtServer);
-        await m.addColumn(billTemplates, billTemplates.deletedAtServer);
-        await m.addColumn(billTemplates, billTemplates.deviceId);
-        await m.addColumn(billTemplates, billTemplates.clientUpdatedAt);
-
-        await m.addColumn(billInstances, billInstances.remoteId);
-        await m.addColumn(billInstances, billInstances.householdId);
-        await m.addColumn(billInstances, billInstances.templateRemoteId);
-        await m.addColumn(billInstances, billInstances.categoryRemoteId);
-        await m.addColumn(billInstances, billInstances.updatedAtServer);
-        await m.addColumn(billInstances, billInstances.deletedAtServer);
-        await m.addColumn(billInstances, billInstances.deviceId);
-        await m.addColumn(billInstances, billInstances.clientUpdatedAt);
-
-        await m.addColumn(incomeSources, incomeSources.remoteId);
-        await m.addColumn(incomeSources, incomeSources.householdId);
-        await m.addColumn(incomeSources, incomeSources.updatedAtServer);
-        await m.addColumn(incomeSources, incomeSources.deletedAtServer);
-        await m.addColumn(incomeSources, incomeSources.deviceId);
-        await m.addColumn(incomeSources, incomeSources.clientUpdatedAt);
-
-        await m.addColumn(incomeInstances, incomeInstances.remoteId);
-        await m.addColumn(incomeInstances, incomeInstances.householdId);
-        await m.addColumn(incomeInstances, incomeInstances.sourceRemoteId);
-        await m.addColumn(incomeInstances, incomeInstances.updatedAtServer);
-        await m.addColumn(incomeInstances, incomeInstances.deletedAtServer);
-        await m.addColumn(incomeInstances, incomeInstances.deviceId);
-        await m.addColumn(incomeInstances, incomeInstances.clientUpdatedAt);
-
-        await m.addColumn(syncSettings, syncSettings.lastSyncServerMs);
-        await m.addColumn(syncSettings, syncSettings.deviceId);
-
-        // Backfill remote IDs for existing rows.
-        await ensureRemoteIdsForAll();
-        await _createRemoteIdIndexes(m);
-      }
-      if (from < 5) {
-        await m.addColumn(categories, categories.profileId);
-        await m.addColumn(billTemplates, billTemplates.profileId);
-        await m.addColumn(billInstances, billInstances.profileId);
-        await m.addColumn(incomeSources, incomeSources.profileId);
-        await m.addColumn(incomeInstances, incomeInstances.profileId);
-        await m.addColumn(syncSettings, syncSettings.profileId);
-        await m.addColumn(outboxEntries, outboxEntries.profileId);
-        // Set existing rows to remote profile
-        await customStatement("UPDATE categories SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE bill_templates SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE bill_instances SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE income_sources SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE income_instances SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE sync_settings SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await customStatement("UPDATE outbox_entries SET profile_id = 'remote' WHERE profile_id IS NULL;");
-        await _createRemoteIdIndexes(m);
-      }
-    },
-  );
 
   Future<void> _seedCategories({String? profileId}) async {
     final pid = profileId ?? profile;
-    Future<int> insert(String name, String color, int sortOrder, String remoteId) {
+    Future<int> insert(
+        String name, String color, int sortOrder, String remoteId) {
       return into(categories).insert(
         CategoriesCompanion.insert(
           profileId: Value(pid),
@@ -282,12 +294,18 @@ class AppDatabase extends _$AppDatabase {
   Future<void> clearAllData() async {
     final settings = await ensureSyncSettingsRow();
     await transaction(() async {
-      await (delete(outboxEntries)..where((o) => o.profileId.equals(profile))).go();
-      await (delete(billInstances)..where((b) => b.profileId.equals(profile))).go();
-      await (delete(billTemplates)..where((b) => b.profileId.equals(profile))).go();
-      await (delete(incomeInstances)..where((i) => i.profileId.equals(profile))).go();
-      await (delete(incomeSources)..where((i) => i.profileId.equals(profile))).go();
-      await (delete(categories)..where((c) => c.profileId.equals(profile))).go();
+      await (delete(outboxEntries)..where((o) => o.profileId.equals(profile)))
+          .go();
+      await (delete(billInstances)..where((b) => b.profileId.equals(profile)))
+          .go();
+      await (delete(billTemplates)..where((b) => b.profileId.equals(profile)))
+          .go();
+      await (delete(incomeInstances)..where((i) => i.profileId.equals(profile)))
+          .go();
+      await (delete(incomeSources)..where((i) => i.profileId.equals(profile)))
+          .go();
+      await (delete(categories)..where((c) => c.profileId.equals(profile)))
+          .go();
 
       await _seedCategories();
       await ensureRemoteIdsForAll();
@@ -310,45 +328,65 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> ensureRemoteIdsForAll() async {
     await transaction(() async {
-      final catRows = await (select(categories)..where((c) => c.profileId.equals(profile) & c.remoteId.isNull())).get();
+      final catRows = await (select(categories)
+            ..where((c) => c.profileId.equals(profile) & c.remoteId.isNull()))
+          .get();
       for (final c in catRows) {
         final id = await _ensureRemoteId(c.remoteId);
-        await (update(categories)..where((t) => t.id.equals(c.id))).write(CategoriesCompanion(remoteId: Value(id)));
+        await (update(categories)..where((t) => t.id.equals(c.id)))
+            .write(CategoriesCompanion(remoteId: Value(id)));
       }
 
-      final btRows = await (select(billTemplates)..where((t) => t.profileId.equals(profile) & t.remoteId.isNull())).get();
+      final btRows = await (select(billTemplates)
+            ..where((t) => t.profileId.equals(profile) & t.remoteId.isNull()))
+          .get();
       for (final t in btRows) {
         final id = await _ensureRemoteId(t.remoteId);
-        await (update(billTemplates)..where((b) => b.id.equals(t.id))).write(BillTemplatesCompanion(remoteId: Value(id)));
+        await (update(billTemplates)..where((b) => b.id.equals(t.id)))
+            .write(BillTemplatesCompanion(remoteId: Value(id)));
       }
 
-      final biRows = await (select(billInstances)..where((t) => t.profileId.equals(profile) & t.remoteId.isNull())).get();
+      final biRows = await (select(billInstances)
+            ..where((t) => t.profileId.equals(profile) & t.remoteId.isNull()))
+          .get();
       for (final t in biRows) {
         final id = await _ensureRemoteId(t.remoteId);
-        await (update(billInstances)..where((b) => b.id.equals(t.id))).write(BillInstancesCompanion(remoteId: Value(id)));
+        await (update(billInstances)..where((b) => b.id.equals(t.id)))
+            .write(BillInstancesCompanion(remoteId: Value(id)));
       }
 
-      final isRows = await (select(incomeSources)..where((t) => t.profileId.equals(profile) & t.remoteId.isNull())).get();
+      final isRows = await (select(incomeSources)
+            ..where((t) => t.profileId.equals(profile) & t.remoteId.isNull()))
+          .get();
       for (final t in isRows) {
         final id = await _ensureRemoteId(t.remoteId);
-        await (update(incomeSources)..where((b) => b.id.equals(t.id))).write(IncomeSourcesCompanion(remoteId: Value(id)));
+        await (update(incomeSources)..where((b) => b.id.equals(t.id)))
+            .write(IncomeSourcesCompanion(remoteId: Value(id)));
       }
 
-      final iiRows = await (select(incomeInstances)..where((t) => t.profileId.equals(profile) & t.remoteId.isNull())).get();
+      final iiRows = await (select(incomeInstances)
+            ..where((t) => t.profileId.equals(profile) & t.remoteId.isNull()))
+          .get();
       for (final t in iiRows) {
         final id = await _ensureRemoteId(t.remoteId);
-        await (update(incomeInstances)..where((b) => b.id.equals(t.id))).write(IncomeInstancesCompanion(remoteId: Value(id)));
+        await (update(incomeInstances)..where((b) => b.id.equals(t.id)))
+            .write(IncomeInstancesCompanion(remoteId: Value(id)));
       }
     });
   }
 
   Future<void> _createRemoteIdIndexes(Migrator m) async {
     // Use partial unique indexes to avoid conflicts with NULL values.
-    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_remote_id ON categories(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
-    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_templates_remote_id ON bill_templates(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
-    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_instances_remote_id ON bill_instances(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
-    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_income_sources_remote_id ON income_sources(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
-    await m.database.customStatement('CREATE UNIQUE INDEX IF NOT EXISTS idx_income_instances_remote_id ON income_instances(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_categories_remote_id ON categories(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_templates_remote_id ON bill_templates(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_bill_instances_remote_id ON bill_instances(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_income_sources_remote_id ON income_sources(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
+    await m.database.customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_income_instances_remote_id ON income_instances(profile_id, remote_id) WHERE remote_id IS NOT NULL;');
   }
 
   Future<String> ensureDeviceId(String? existing) async {
@@ -370,7 +408,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<SyncSetting> ensureSyncSettingsRow({String? profileId}) async {
     final pid = profileId ?? profile;
-    final existing = await (select(syncSettings)..where((s) => s.profileId.equals(pid))..limit(1)).get();
+    final existing = await (select(syncSettings)
+          ..where((s) => s.profileId.equals(pid))
+          ..limit(1))
+        .get();
     if (existing.isNotEmpty) return existing.first;
     final id = await into(syncSettings).insert(
       SyncSettingsCompanion(
@@ -383,12 +424,17 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Stream<SyncSetting?> watchSyncSettings() {
-    final q = (select(syncSettings)..where((s) => s.profileId.equals(profile))..limit(1));
+    final q = (select(syncSettings)
+      ..where((s) => s.profileId.equals(profile))
+      ..limit(1));
     return q.watchSingleOrNull();
   }
 
   Future<SyncSetting> getSyncSettingsOnce() async {
-    final existing = await (select(syncSettings)..where((s) => s.profileId.equals(profile))..limit(1)).get();
+    final existing = await (select(syncSettings)
+          ..where((s) => s.profileId.equals(profile))
+          ..limit(1))
+        .get();
     if (existing.isNotEmpty) return existing.first;
     return ensureSyncSettingsRow();
   }
@@ -494,8 +540,12 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<BillTemplate>> getActiveBillTemplates() {
     return (select(billTemplates)
-      ..where((t) => t.profileId.equals(profile) & t.active.equals(true) & t.recurrenceRule.isNotNull())
-      ..orderBy([(t) => OrderingTerm.asc(t.name)])).get();
+          ..where((t) =>
+              t.profileId.equals(profile) &
+              t.active.equals(true) &
+              t.recurrenceRule.isNotNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.name)]))
+        .get();
   }
 
   Future<int> upsertBillTemplate({
@@ -530,20 +580,29 @@ class AppDatabase extends _$AppDatabase {
     if (id == null) {
       return into(billTemplates).insert(companion);
     }
-    await (update(billTemplates)..where((t) => t.profileId.equals(profile) & t.id.equals(id))).write(companion);
+    await (update(billTemplates)
+          ..where((t) => t.profileId.equals(profile) & t.id.equals(id)))
+        .write(companion);
     return id;
   }
 
   Future<void> deleteBillTemplate(int id) async {
-    final row = await (select(billTemplates)..where((t) => t.profileId.equals(profile) & t.id.equals(id))).getSingleOrNull();
+    final row = await (select(billTemplates)
+          ..where((t) => t.profileId.equals(profile) & t.id.equals(id)))
+        .getSingleOrNull();
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_templates', entityId: row!.remoteId!, op: 'delete');
+      await enqueueOutbox(
+          entityType: 'bill_templates', entityId: row!.remoteId!, op: 'delete');
     }
-    await (delete(billTemplates)..where((t) => t.profileId.equals(profile) & t.id.equals(id))).go();
+    await (delete(billTemplates)
+          ..where((t) => t.profileId.equals(profile) & t.id.equals(id)))
+        .go();
   }
 
   Future<void> toggleBillTemplateActive(int id, bool active) async {
-    await (update(billTemplates)..where((t) => t.profileId.equals(profile) & t.id.equals(id))).write(
+    await (update(billTemplates)
+          ..where((t) => t.profileId.equals(profile) & t.id.equals(id)))
+        .write(
       BillTemplatesCompanion(active: Value(active)),
     );
   }
@@ -552,20 +611,33 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<BillInstance>> getBillInstancesForDate(String dateStr) {
     return (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.dueDate.equals(dateStr) & i.status.isNotIn(['skipped']))
-      ..orderBy([(i) => OrderingTerm.asc(i.id)])).get();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.dueDate.equals(dateStr) &
+              i.status.isNotIn(['skipped']))
+          ..orderBy([(i) => OrderingTerm.asc(i.id)]))
+        .get();
   }
 
   Stream<List<BillInstance>> watchBillInstancesForDate(String dateStr) {
     return (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.dueDate.equals(dateStr) & i.status.isNotIn(['skipped']))
-      ..orderBy([(i) => OrderingTerm.asc(i.id)])).watch();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.dueDate.equals(dateStr) &
+              i.status.isNotIn(['skipped']))
+          ..orderBy([(i) => OrderingTerm.asc(i.id)]))
+        .watch();
   }
 
-  Future<List<BillInstance>> getBillInstancesForMonth(String startDate, String endDate) {
+  Future<List<BillInstance>> getBillInstancesForMonth(
+      String startDate, String endDate) {
     return (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.dueDate.isBetweenValues(startDate, endDate) & i.status.isNotIn(['skipped']))
-      ..orderBy([(i) => OrderingTerm.asc(i.dueDate)])).get();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.dueDate.isBetweenValues(startDate, endDate) &
+              i.status.isNotIn(['skipped']))
+          ..orderBy([(i) => OrderingTerm.asc(i.dueDate)]))
+        .get();
   }
 
   Stream<List<BillInstance>> watchAllBillInstances() {
@@ -575,15 +647,23 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
-  Stream<List<BillInstance>> watchBillInstancesForMonth(String startDate, String endDate) {
+  Stream<List<BillInstance>> watchBillInstancesForMonth(
+      String startDate, String endDate) {
     return (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.dueDate.isBetweenValues(startDate, endDate))
-      ..orderBy([(i) => OrderingTerm.asc(i.dueDate)])).watch();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.dueDate.isBetweenValues(startDate, endDate))
+          ..orderBy([(i) => OrderingTerm.asc(i.dueDate)]))
+        .watch();
   }
 
-  Future<BillInstance?> getBillInstanceByTemplateAndDate(int templateId, String dateStr) {
+  Future<BillInstance?> getBillInstanceByTemplateAndDate(
+      int templateId, String dateStr) {
     return (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.templateId.equals(templateId) & i.dueDate.equals(dateStr)))
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.templateId.equals(templateId) &
+              i.dueDate.equals(dateStr)))
         .getSingleOrNull();
   }
 
@@ -608,7 +688,8 @@ class AppDatabase extends _$AppDatabase {
           category: Value(category),
         ),
       );
-      await enqueueOutbox(entityType: 'bill_instances', entityId: uuid, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: uuid, op: 'upsert');
       return id;
     });
   }
@@ -633,7 +714,8 @@ class AppDatabase extends _$AppDatabase {
           category: Value(category),
         ),
       );
-      await enqueueOutbox(entityType: 'bill_instances', entityId: uuid, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: uuid, op: 'upsert');
       return id;
     });
   }
@@ -642,8 +724,12 @@ class AppDatabase extends _$AppDatabase {
     required int instanceId,
     required int paidAmountCents,
   }) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       BillInstancesCompanion(
         status: const Value('paid'),
         paidAmountCents: Value(paidAmountCents),
@@ -651,7 +737,8 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
@@ -659,8 +746,12 @@ class AppDatabase extends _$AppDatabase {
     required int instanceId,
     required int paidAmountCents,
   }) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       BillInstancesCompanion(
         status: const Value('partial'),
         paidAmountCents: Value(paidAmountCents),
@@ -668,13 +759,18 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
   Future<void> markBillUnpaid({required int instanceId}) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       const BillInstancesCompanion(
         status: Value('scheduled'),
         paidAmountCents: Value(null),
@@ -682,27 +778,38 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
   Future<void> skipBillInstance({required int instanceId}) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       const BillInstancesCompanion(status: Value('skipped')),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
   Future<void> unskipBillInstance({required int instanceId}) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       const BillInstancesCompanion(status: Value('scheduled')),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
@@ -710,12 +817,17 @@ class AppDatabase extends _$AppDatabase {
     required int instanceId,
     required int amountCents,
   }) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       BillInstancesCompanion(amountCents: Value(amountCents)),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
@@ -723,21 +835,31 @@ class AppDatabase extends _$AppDatabase {
     required int instanceId,
     String? notes,
   }) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       BillInstancesCompanion(notes: Value(notes)),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'upsert');
     }
   }
 
   Future<void> deleteBillInstance(int id) async {
-    final row = await (select(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(id))).getSingleOrNull();
+    final row = await (select(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(id)))
+        .getSingleOrNull();
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'bill_instances', entityId: row!.remoteId!, op: 'delete');
+      await enqueueOutbox(
+          entityType: 'bill_instances', entityId: row!.remoteId!, op: 'delete');
     }
-    await (delete(billInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(id))).go();
+    await (delete(billInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(id)))
+        .go();
   }
 
   // ------------ Income Source operations ------------
@@ -758,8 +880,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<IncomeSource>> getActiveIncomeSources() {
     return (select(incomeSources)
-      ..where((s) => s.profileId.equals(profile) & s.active.equals(true))
-      ..orderBy([(s) => OrderingTerm.asc(s.name)])).get();
+          ..where((s) => s.profileId.equals(profile) & s.active.equals(true))
+          ..orderBy([(s) => OrderingTerm.asc(s.name)]))
+        .get();
   }
 
   Future<int> upsertIncomeSource({
@@ -792,30 +915,46 @@ class AppDatabase extends _$AppDatabase {
     if (id == null) {
       return into(incomeSources).insert(companion);
     }
-    await (update(incomeSources)..where((s) => s.profileId.equals(profile) & s.id.equals(id))).write(companion);
+    await (update(incomeSources)
+          ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .write(companion);
     return id;
   }
 
   Future<void> deleteIncomeSource(int id) async {
-    final row = await (select(incomeSources)..where((s) => s.profileId.equals(profile) & s.id.equals(id))).getSingleOrNull();
+    final row = await (select(incomeSources)
+          ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .getSingleOrNull();
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_sources', entityId: row!.remoteId!, op: 'delete');
+      await enqueueOutbox(
+          entityType: 'income_sources', entityId: row!.remoteId!, op: 'delete');
     }
-    await (delete(incomeSources)..where((s) => s.profileId.equals(profile) & s.id.equals(id))).go();
+    await (delete(incomeSources)
+          ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .go();
   }
 
   // ------------ Income Instance operations ------------
 
-  Future<List<IncomeInstance>> getIncomeInstancesForMonth(String startDate, String endDate) {
+  Future<List<IncomeInstance>> getIncomeInstancesForMonth(
+      String startDate, String endDate) {
     return (select(incomeInstances)
-      ..where((i) => i.profileId.equals(profile) & i.date.isBetweenValues(startDate, endDate) & i.status.isNotIn(['skipped']))
-      ..orderBy([(i) => OrderingTerm.asc(i.date)])).get();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.date.isBetweenValues(startDate, endDate) &
+              i.status.isNotIn(['skipped']))
+          ..orderBy([(i) => OrderingTerm.asc(i.date)]))
+        .get();
   }
 
-  Stream<List<IncomeInstance>> watchIncomeInstancesForMonth(String startDate, String endDate) {
+  Stream<List<IncomeInstance>> watchIncomeInstancesForMonth(
+      String startDate, String endDate) {
     return (select(incomeInstances)
-      ..where((i) => i.profileId.equals(profile) & i.date.isBetweenValues(startDate, endDate))
-      ..orderBy([(i) => OrderingTerm.asc(i.date)])).watch();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.date.isBetweenValues(startDate, endDate))
+          ..orderBy([(i) => OrderingTerm.asc(i.date)]))
+        .watch();
   }
 
   Stream<List<IncomeInstance>> watchAllIncomeInstances() {
@@ -825,9 +964,13 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
-  Future<IncomeInstance?> getIncomeInstanceBySourceAndDate(int sourceId, String dateStr) {
+  Future<IncomeInstance?> getIncomeInstanceBySourceAndDate(
+      int sourceId, String dateStr) {
     return (select(incomeInstances)
-      ..where((i) => i.profileId.equals(profile) & i.sourceId.equals(sourceId) & i.date.equals(dateStr)))
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.sourceId.equals(sourceId) &
+              i.date.equals(dateStr)))
         .getSingleOrNull();
   }
 
@@ -850,7 +993,8 @@ class AppDatabase extends _$AppDatabase {
           notes: Value(notes),
         ),
       );
-      await enqueueOutbox(entityType: 'income_instances', entityId: uuid, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances', entityId: uuid, op: 'upsert');
       return id;
     });
   }
@@ -873,44 +1017,66 @@ class AppDatabase extends _$AppDatabase {
           date: Value(date),
         ),
       );
-      await enqueueOutbox(entityType: 'income_instances', entityId: uuid, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances', entityId: uuid, op: 'upsert');
       return id;
     });
   }
 
   Future<void> markIncomeReceived({required int instanceId}) async {
-    final row = await (select(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       IncomeInstancesCompanion(
         status: const Value('received'),
         receivedAt: Value(DateTime.now()),
       ),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row!.remoteId!,
+          op: 'upsert');
     }
   }
 
   Future<void> markIncomeExpected({required int instanceId}) async {
-    final row = await (select(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       const IncomeInstancesCompanion(
         status: Value('expected'),
         receivedAt: Value(null),
       ),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row!.remoteId!,
+          op: 'upsert');
     }
   }
 
   Future<void> skipIncomeInstance({required int instanceId}) async {
-    final row = await (select(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       const IncomeInstancesCompanion(status: Value('skipped')),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row!.remoteId!,
+          op: 'upsert');
     }
   }
 
@@ -918,26 +1084,41 @@ class AppDatabase extends _$AppDatabase {
     required int instanceId,
     required int amountCents,
   }) async {
-    final row = await (select(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).getSingleOrNull();
-    await (update(incomeInstances)..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId))).write(
+    final row = await (select(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .getSingleOrNull();
+    await (update(incomeInstances)
+          ..where((i) => i.profileId.equals(profile) & i.id.equals(instanceId)))
+        .write(
       IncomeInstancesCompanion(amountCents: Value(amountCents)),
     );
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'upsert');
+      await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row!.remoteId!,
+          op: 'upsert');
     }
   }
 
   Future<void> deleteIncomeInstance(int id) async {
-    final row = await (select(incomeInstances)..where((s) => s.profileId.equals(profile) & s.id.equals(id))).getSingleOrNull();
+    final row = await (select(incomeInstances)
+          ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .getSingleOrNull();
     if (row?.remoteId != null) {
-      await enqueueOutbox(entityType: 'income_instances', entityId: row!.remoteId!, op: 'delete');
+      await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row!.remoteId!,
+          op: 'delete');
     }
-    await (delete(incomeInstances)..where((s) => s.profileId.equals(profile) & s.id.equals(id))).go();
+    await (delete(incomeInstances)
+          ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .go();
   }
 
   // ------------ Dashboard calculations ------------
 
-  Future<Map<String, int>> getMonthSummary(String startDate, String endDate) async {
+  Future<Map<String, int>> getMonthSummary(
+      String startDate, String endDate) async {
     final bills = await getBillInstancesForMonth(startDate, endDate);
     final income = await getIncomeInstancesForMonth(startDate, endDate);
 
@@ -972,10 +1153,15 @@ class AppDatabase extends _$AppDatabase {
     };
   }
 
-  Future<Map<String, int>> getNext7DaysSummary(String startDate, String endDate) async {
+  Future<Map<String, int>> getNext7DaysSummary(
+      String startDate, String endDate) async {
     final bills = await (select(billInstances)
-      ..where((i) => i.profileId.equals(profile) & i.dueDate.isBetweenValues(startDate, endDate) & i.status.equals('scheduled'))
-      ..orderBy([(i) => OrderingTerm.asc(i.dueDate)])).get();
+          ..where((i) =>
+              i.profileId.equals(profile) &
+              i.dueDate.isBetweenValues(startDate, endDate) &
+              i.status.equals('scheduled'))
+          ..orderBy([(i) => OrderingTerm.asc(i.dueDate)]))
+        .get();
 
     int total = 0;
     for (final b in bills) {
@@ -988,7 +1174,8 @@ class AppDatabase extends _$AppDatabase {
     };
   }
 
-  Future<Map<String, int>> getCategoryBreakdown(String startDate, String endDate) async {
+  Future<Map<String, int>> getCategoryBreakdown(
+      String startDate, String endDate) async {
     final bills = await getBillInstancesForMonth(startDate, endDate);
     final breakdown = <String, int>{};
 
