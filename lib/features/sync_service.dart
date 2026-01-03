@@ -198,6 +198,37 @@ class SyncService {
         lastSyncServerMs: serverNow,
       );
 
+      // Auto-push again if anything new was queued during this sync
+      final remainingOutbox = await db.getOutboxBatch(limit: 200);
+      if (remainingOutbox.isNotEmpty) {
+        _log(
+            'Outbox after pull: ${remainingOutbox.length}, pushing automatically');
+        final upserts2 = await _buildLocalUpserts();
+        final deletes2 = _buildDeletes(remainingOutbox);
+        final pushResp2 = await http
+            .post(
+              pushUri,
+              headers: {
+                'x-api-key': settings.apiKey ?? '',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'device_id': deviceId,
+                'client_now': DateTime.now().millisecondsSinceEpoch,
+                'upserts': upserts2,
+                'deletes': deletes2,
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
+        _log('Post-pull push status: ${pushResp2.statusCode}');
+        if (pushResp2.statusCode >= 200 && pushResp2.statusCode < 300) {
+          await db.clearOutboxIds(remainingOutbox.map((e) => e.id).toList());
+        } else {
+          return SyncResult(false,
+              'Push failed after pull ${pushResp2.statusCode}: ${pushResp2.body}');
+        }
+      }
+
       _log('Sync complete');
       return const SyncResult(true, 'Sync complete');
     } catch (e) {
