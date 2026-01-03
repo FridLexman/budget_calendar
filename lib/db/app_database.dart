@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:drift/web.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
 part 'app_database.g.dart';
@@ -135,6 +137,10 @@ class AppDatabase extends _$AppDatabase {
   String get profile => activeProfileId;
 
   static Future<AppDatabase> open() async {
+    if (kIsWeb) {
+      return AppDatabase(WebDatabase('budget_calendar'));
+    }
+
     final executor = driftDatabase(
       name: 'budget_calendar.db',
       native: const DriftNativeOptions(),
