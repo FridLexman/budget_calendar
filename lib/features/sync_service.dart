@@ -23,7 +23,7 @@ class SyncService {
     debugPrint('[SyncService] $msg');
   }
 
-  DateTime _parseDate(dynamic value, DateTime fallback) {
+  DateTime? _parseDate(dynamic value, [DateTime? fallback]) {
     if (value == null) return fallback;
     if (value is num) {
       return DateTime.fromMillisecondsSinceEpoch(value.toInt());
