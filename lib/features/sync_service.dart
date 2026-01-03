@@ -551,7 +551,8 @@ class SyncService {
           active:
               Value(_asBool(s['active'], fallback: existing?.active ?? true)),
           createdAt: Value(_parseDate(
-              s['created_at'], existing?.createdAt ?? DateTime.now())),
+                  s['created_at'], existing?.createdAt ?? DateTime.now()) ??
+              DateTime.now()),
           updatedAtServer: Value((s['updated_at_server'] as num?)?.toInt()),
           deletedAtServer: Value((s['deleted_at_server'] as num?)?.toInt()),
           deviceId: Value(s['device_id'] as String?),
@@ -603,7 +604,8 @@ class SyncService {
           receivedAt: Value(_parseDate(i['received_at'], existing?.receivedAt)),
           notes: Value(i['notes'] as String?),
           createdAt: Value(_parseDate(
-              i['created_at'], existing?.createdAt ?? DateTime.now())),
+                  i['created_at'], existing?.createdAt ?? DateTime.now()) ??
+              DateTime.now()),
           updatedAtServer: Value((i['updated_at_server'] as num?)?.toInt()),
           deletedAtServer: Value((i['deleted_at_server'] as num?)?.toInt()),
           deviceId: Value(i['device_id'] as String?),
