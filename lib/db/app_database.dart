@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'package:drift/wasm.dart';
+import 'package:flutter/foundation.dart';
 import 'package:sqlite3/wasm.dart';
 import 'package:uuid/uuid.dart';
 
@@ -131,6 +131,7 @@ class OutboxEntries extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
+  bool get isWeb => kIsWeb;
   String activeProfileId = 'remote';
   void setActiveProfile(String profileId) {
     activeProfileId = profileId;
@@ -139,13 +140,10 @@ class AppDatabase extends _$AppDatabase {
 
   static Future<AppDatabase> open() async {
     if (kIsWeb) {
-      final sqlite3 = await WasmSqlite3.loadFromUrl(Uri.parse('sql-wasm.wasm'));
-      return AppDatabase(
-        WasmDatabase(
-          sqlite3: sqlite3,
-          path: 'budget_calendar',
-        ),
-      );
+      // Remote-only for web: use an in-memory wasm sqlite just to satisfy Drift,
+      // but expect all data to come from the remote API.
+      final sqlite3 = await WasmSqlite3.loadFromUrl(Uri.parse('sqlite3.wasm'));
+      return AppDatabase(WasmDatabase(sqlite3: sqlite3, path: 'budget_calendar_web'));
     }
 
     final executor = driftDatabase(

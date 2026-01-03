@@ -4,11 +4,13 @@ import '../features/month_generator.dart';
 
 final appDatabaseProvider = FutureProvider<AppDatabase>((ref) async {
   final db = await AppDatabase.open();
-  
-  // Generate instances for current and next month on startup
-  final generator = MonthGenerator(db);
-  await generator.ensureCurrentAndNextMonthGenerated();
-  
+
+  // Generate instances for current and next month on startup (native/desktop/mobile only)
+  if (!db.isWeb) {
+    final generator = MonthGenerator(db);
+    await generator.ensureCurrentAndNextMonthGenerated();
+  }
+
   ref.onDispose(() => db.close());
   return db;
 });
