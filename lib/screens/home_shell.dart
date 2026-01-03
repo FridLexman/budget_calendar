@@ -21,6 +21,7 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   int idx = 0;
+  bool _autoSyncStarted = false;
 
   final screens = const [
     DashboardScreen(),
@@ -32,6 +33,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    _maybeAutoSync();
     return Scaffold(
       body: IndexedStack(
         index: idx,
@@ -41,8 +43,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         selectedIndex: idx,
         onDestinationSelected: (v) => setState(() => idx = v),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.calendar_month), label: 'Calendar'),
+          NavigationDestination(
+              icon: Icon(Icons.dashboard), label: 'Dashboard'),
+          NavigationDestination(
+              icon: Icon(Icons.calendar_month), label: 'Calendar'),
           NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Bills'),
           NavigationDestination(icon: Icon(Icons.payments), label: 'Income'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
@@ -50,6 +54,31 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       floatingActionButton: _buildSyncFab(context),
     );
+  }
+
+  void _maybeAutoSync() {
+    if (_autoSyncStarted) return;
+    final settingsAsync = ref.read(syncSettingsProvider);
+    final settings = settingsAsync.value;
+    if (settings == null ||
+        settings.useRemote != true ||
+        (settings.baseUrl?.isEmpty ?? true) ||
+        (settings.apiKey?.isEmpty ?? true)) {
+      return;
+    }
+    _autoSyncStarted = true;
+    Future.microtask(() async {
+      final db = await ref.read(appDatabaseProvider.future);
+      final svc = SyncService(db, settings);
+      final result = await svc.syncNow();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor: result.ok ? Colors.green : Colors.orange,
+        ),
+      );
+    });
   }
 
   Widget? _buildSyncFab(BuildContext context) {
