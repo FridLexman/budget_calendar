@@ -58,6 +58,13 @@ Building releases
   ```
   Output: `build/windows/x64/runner/Release/budget_calendar.exe`. Requires Windows Developer Mode for symlinks and Visual Studio with the "Desktop development with C++" workload.
 
+Local-only web UI
+-----------------
+- A static web shell lives in `web/` (no backend by default) with styling aligned to the app.
+- Tabs: Dashboard, Calendar, Bills, Income, Settings. Uses sample data; wire your API calls in `web/app.js`.
+- Mobile-friendly out of the box.
+- Serve locally: `npx serve web` or any static server. In Kubernetes, mount `web/` into an nginx pod and expose only on your LAN.
+
 Remote sync backend (MySQL)
 ---------------------------
 SQLite remains the offline cache. A single API key = one household; all devices sharing that key see the same data. The backend uses safe, incremental sync (no destructive import/export).

@@ -1,38 +1,123 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="budget_calendar">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>budget_calendar</title>
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budget Calendar Web</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="title">Budget Calendar</span>
+      <span class="badge">Web · Local</span>
+    </div>
+    <div class="tagline">Same look as the app, ready to host on your kube cluster</div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="dashboard" class="tab active">Dashboard</button>
+    <button data-tab="calendar" class="tab">Calendar</button>
+    <button data-tab="bills" class="tab">Bills</button>
+    <button data-tab="income" class="tab">Income</button>
+    <button data-tab="settings" class="tab">Settings</button>
+  </nav>
+
+  <main class="content">
+    <section id="dashboard" class="panel active">
+      <div class="grid">
+        <div class="card">
+          <div class="card-label">This month</div>
+          <div class="card-value" id="dash-month-total">$0</div>
+          <div class="muted" id="dash-month-count">0 bills</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Income projected</div>
+          <div class="card-value" id="dash-income">$0</div>
+          <div class="muted" id="dash-income-count">0 entries</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Next 7 days</div>
+          <div class="card-value" id="dash-next">$0</div>
+          <div class="muted" id="dash-next-count">0 bills due</div>
+        </div>
+      </div>
+      <div class="card stretch">
+        <div class="card-header">
+          <h3>Upcoming</h3>
+          <span class="pill" id="upcoming-pill">0 due soon</span>
+        </div>
+        <ul class="list" id="upcoming-list"></ul>
+      </div>
+    </section>
+
+    <section id="calendar" class="panel">
+      <div class="card stretch">
+        <div class="card-header">
+          <h3>Month at a glance</h3>
+          <span class="muted">Static preview — wire to your API as needed</span>
+        </div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+      </div>
+    </section>
+
+    <section id="bills" class="panel">
+      <div class="card stretch">
+        <div class="card-header">
+          <h3>This month’s bills</h3>
+          <span class="pill" id="bills-count">0</span>
+        </div>
+        <ul class="list" id="bills-list"></ul>
+      </div>
+    </section>
+
+    <section id="income" class="panel">
+      <div class="card stretch">
+        <div class="card-header">
+          <h3>Income</h3>
+          <span class="pill" id="income-count">0</span>
+        </div>
+        <ul class="list" id="income-list"></ul>
+      </div>
+    </section>
+
+    <section id="settings" class="panel">
+      <div class="card stretch">
+        <div class="card-header">
+          <h3>Remote API (local only)</h3>
+          <span class="muted">Host inside your kube cluster; not internet-facing</span>
+        </div>
+        <form class="form" id="settings-form">
+          <label>
+            API Base URL
+            <input type="url" id="base-url" placeholder="http://192.168.1.xx:8080/">
+          </label>
+          <label>
+            API Key
+            <input type="password" id="api-key" placeholder="••••••••">
+          </label>
+          <label>
+            Sync mode
+            <select id="sync-mode">
+              <option value="local_only">Local only</option>
+              <option value="hybrid">Hybrid (local + remote)</option>
+              <option value="remote_only">Remote only</option>
+            </select>
+          </label>
+          <button type="submit" class="btn primary">Save settings</button>
+          <p class="muted small">
+            Note: This static page does not persist secrets; integrate with your API by wiring fetch calls in <code>app.js</code>.
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Local-only web UI · Match to app styling · Serve behind your kube ingress
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>

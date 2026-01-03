@@ -1,0 +1,197 @@
+:root {
+  --bg: #0f141c;
+  --surface: #171e29;
+  --surface-2: #1f2633;
+  --text: #e8edf4;
+  --muted: #9aa5b5;
+  --accent: #4e8df5;
+  --accent-2: #5ed0a5;
+  --danger: #e76a6a;
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.topbar {
+  padding: 16px 20px;
+  background: linear-gradient(90deg, #111827, #0f141c);
+  border-bottom: 1px solid #202a38;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.brand .dot {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+}
+.brand .title { font-size: 18px; }
+.brand .badge {
+  background: #223047;
+  color: var(--muted);
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.tagline {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px 14px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+.tab {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.12s ease;
+}
+.tab:hover { border-color: var(--accent); }
+.tab.active { background: var(--accent); border-color: var(--accent); }
+
+.content { padding: 12px 14px 40px; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.card.stretch { width: 100%; margin-top: 12px; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.card-label { color: var(--muted); font-size: 13px; }
+.card-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+.pill {
+  background: #213147;
+  color: var(--text);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #2b3a52;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list li {
+  background: var(--surface-2);
+  border: 1px solid #1f2937;
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.list .meta { display: flex; flex-direction: column; gap: 4px; }
+.list .label { font-weight: 600; }
+.list .sub { color: var(--muted); font-size: 13px; }
+.list .amount { font-weight: 700; }
+.badge-success { color: var(--accent-2); }
+.badge-danger { color: var(--danger); }
+
+.calendar-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 8px;
+}
+.day {
+  background: var(--surface-2);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 10px;
+}
+.day .date { font-weight: 700; margin-bottom: 6px; }
+.day .dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  margin-right: 6px;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.form { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.form label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
+.form input, .form select {
+  background: var(--surface-2);
+  border: 1px solid #1f2937;
+  border-radius: 10px;
+  padding: 10px;
+  color: var(--text);
+}
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.footer {
+  padding: 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid #1f2937;
+}
+
+@media (max-width: 640px) {
+  .tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); position: static; }
+  .card { padding: 12px; }
+  .calendar-grid { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); }
+}
