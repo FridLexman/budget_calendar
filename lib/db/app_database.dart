@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
-import 'package:drift/web.dart';
 import 'package:flutter/foundation.dart';
+import 'package:drift/wasm.dart';
+import 'package:sqlite3/wasm.dart';
 import 'package:uuid/uuid.dart';
 
 part 'app_database.g.dart';
@@ -138,7 +139,13 @@ class AppDatabase extends _$AppDatabase {
 
   static Future<AppDatabase> open() async {
     if (kIsWeb) {
-      return AppDatabase(WebDatabase('budget_calendar'));
+      final sqlite3 = await WasmSqlite3.loadFromUrl(Uri.parse('sql-wasm.wasm'));
+      return AppDatabase(
+        WasmDatabase(
+          sqlite3: sqlite3,
+          path: 'budget_calendar',
+        ),
+      );
     }
 
     final executor = driftDatabase(
