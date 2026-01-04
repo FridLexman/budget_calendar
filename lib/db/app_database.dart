@@ -1124,6 +1124,27 @@ class AppDatabase extends _$AppDatabase {
     final row = await (select(incomeInstances)
           ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
         .getSingleOrNull();
+
+    // For recurring income instances, mark as skipped instead of hard deleting
+    // so generators don't recreate the same date after sync.
+    if (row != null && row.sourceId != null) {
+      await (update(incomeInstances)
+            ..where((i) => i.profileId.equals(profile) & i.id.equals(id)))
+          .write(
+        const IncomeInstancesCompanion(
+          status: Value('skipped'),
+          receivedAt: Value(null),
+        ),
+      );
+      if (row.remoteId != null) {
+        await enqueueOutbox(
+            entityType: 'income_instances',
+            entityId: row.remoteId!,
+            op: 'upsert');
+      }
+      return;
+    }
+
     if (row?.remoteId != null) {
       await enqueueOutbox(
           entityType: 'income_instances',
