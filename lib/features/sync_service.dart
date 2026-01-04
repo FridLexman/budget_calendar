@@ -216,8 +216,11 @@ class SyncService {
           body['server_now'] as int? ?? DateTime.now().millisecondsSinceEpoch;
       final changes = body['changes'] as Map<String, dynamic>? ?? {};
       await _applyChanges(changes);
-      // Generate near-term months so new templates/sources create instances locally
-      await MonthGenerator(db).ensureCurrentAndNextMonthGenerated();
+      // Generate near-term months only when remote sync is off to avoid re-creating
+      // instances that the server already owns.
+      if (!(settings.useRemote)) {
+        await MonthGenerator(db).ensureCurrentAndNextMonthGenerated();
+      }
       await db.saveSyncSettings(
         useRemote: settings.useRemote,
         mode: settings.mode,
