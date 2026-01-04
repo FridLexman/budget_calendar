@@ -6,11 +6,20 @@ import '../features/month_generator.dart';
 import '../utils/money.dart';
 import '../utils/date_utils.dart';
 
-class IncomeScreen extends ConsumerWidget {
+class IncomeScreen extends ConsumerStatefulWidget {
   const IncomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<IncomeScreen> createState() => _IncomeScreenState();
+}
+
+class _IncomeScreenState extends ConsumerState<IncomeScreen> {
+  final Set<int> _selectedIncomeIds = {};
+  String _incomeStatusFilter = 'all';
+  bool _incomeAllMonths = false;
+
+  @override
+  Widget build(BuildContext context) {
     final dbAsync = ref.watch(appDatabaseProvider);
 
     return dbAsync.when(
@@ -39,91 +48,196 @@ class IncomeScreen extends ConsumerWidget {
           ),
         ),
       ),
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (e, st) => Scaffold(body: Center(child: Text('Error: $e'))),
     );
   }
 
   Widget _buildInstancesTab(BuildContext context, AppDatabase db) {
-    return StreamBuilder(
-      stream: db.watchAllIncomeInstances(),
-      builder: (context, snap) {
-        final rows = snap.data ?? [];
-        if (rows.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    final now = DateTime.now();
+    final startDate = ymd(DateTime(now.year, now.month, 1));
+    final endDate = ymd(DateTime(now.year, now.month + 1, 0));
+    final stream = _incomeAllMonths
+        ? db.watchAllIncomeInstances()
+        : db.watchIncomeInstancesForMonth(startDate, endDate);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<String>(
+                  value: _incomeStatusFilter,
+                  decoration: const InputDecoration(labelText: 'Status filter'),
+                  items: const [
+                    DropdownMenuItem(value: 'all', child: Text('All')),
+                    DropdownMenuItem(
+                        value: 'expected', child: Text('Expected')),
+                    DropdownMenuItem(
+                        value: 'received', child: Text('Received')),
+                    DropdownMenuItem(value: 'skipped', child: Text('Skipped')),
+                  ],
+                  onChanged: (v) {
+                    if (v == null) return;
+                    setState(() {
+                      _incomeStatusFilter = v;
+                      _selectedIncomeIds.clear();
+                    });
+                  },
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('All months'),
+                  Switch(
+                    value: _incomeAllMonths,
+                    onChanged: (v) {
+                      setState(() {
+                        _incomeAllMonths = v;
+                        _selectedIncomeIds.clear();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (_selectedIncomeIds.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Row(
               children: [
-                Icon(Icons.payments, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                const Text('No income entries yet.'),
-                const SizedBox(height: 8),
-                const Text(
-                  'Add income to track your earnings\nand calculate money left.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: () => _deleteSelectedIncomes(db),
+                  icon: const Icon(Icons.delete),
+                  label: Text('Delete selected (${_selectedIncomeIds.length})'),
+                ),
+                const SizedBox(width: 12),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedIncomeIds.clear();
+                    });
+                  },
+                  child: const Text('Clear'),
                 ),
               ],
             ),
-          );
-        }
+          ),
+        Expanded(
+          child: StreamBuilder(
+            stream: stream,
+            builder: (context, snap) {
+              final rows = snap.data ?? [];
+              final filtered = rows.where((r) {
+                if (_incomeStatusFilter == 'all') return true;
+                return r.status == _incomeStatusFilter;
+              }).toList();
 
-        // Group by month
-        final grouped = <String, List<IncomeInstance>>{};
-        for (final r in rows) {
-          final date = parseYmd(r.date);
-          final key = formatMonthYear(date);
-          grouped.putIfAbsent(key, () => []).add(r);
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(12),
-          itemCount: grouped.length,
-          itemBuilder: (context, index) {
-            final monthKey = grouped.keys.elementAt(index);
-            final monthRows = grouped[monthKey]!;
-            final monthTotal = monthRows.fold<int>(0, (a, b) => a + b.amountCents);
-            final receivedTotal = monthRows
-                .where((r) => r.status == 'received')
-                .fold<int>(0, (a, b) => a + b.amountCents);
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        monthKey,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Expected: ${formatCents(monthTotal)}',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          Text(
-                            'Received: ${formatCents(receivedTotal)}',
-                            style: const TextStyle(fontSize: 12, color: Colors.green),
-                          ),
-                        ],
-                      ),
+                      Icon(Icons.payments, size: 64, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      const Text('No income entries match the filter.'),
                     ],
                   ),
-                ),
-                ...monthRows.map((r) => _buildIncomeCard(context, db, r)),
-                const SizedBox(height: 16),
-              ],
-            );
-          },
-        );
-      },
+                );
+              }
+
+              final grouped = <String, List<IncomeInstance>>{};
+              for (final r in filtered) {
+                final date = parseYmd(r.date);
+                final key = formatMonthYear(date);
+                grouped.putIfAbsent(key, () => []).add(r);
+              }
+
+              final itemCount =
+                  grouped.length + (_selectedIncomeIds.isNotEmpty ? 1 : 0);
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: itemCount,
+                itemBuilder: (context, index) {
+                  if (_selectedIncomeIds.isNotEmpty && index == 0) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final monthIndex =
+                      _selectedIncomeIds.isNotEmpty ? index - 1 : index;
+                  final monthKey = grouped.keys.elementAt(monthIndex);
+                  final monthRows = grouped[monthKey]!;
+                  final monthTotal =
+                      monthRows.fold<int>(0, (a, b) => a + b.amountCents);
+                  final receivedTotal = monthRows
+                      .where((r) => r.status == 'received')
+                      .fold<int>(0, (a, b) => a + b.amountCents);
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              monthKey,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Expected: ${formatCents(monthTotal)}',
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                Text(
+                                  'Received: ${formatCents(receivedTotal)}',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.green),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      ...monthRows.map(
+                        (r) => _buildIncomeCard(
+                          context,
+                          db,
+                          r,
+                          _selectedIncomeIds.contains(r.id),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -168,18 +282,27 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildIncomeCard(BuildContext context, AppDatabase db, IncomeInstance income) {
+  Widget _buildIncomeCard(BuildContext context, AppDatabase db,
+      IncomeInstance income, bool selected) {
     final isReceived = income.status == 'received';
     final isSkipped = income.status == 'skipped';
 
     return Card(
       color: isSkipped ? Colors.grey[100] : null,
       child: InkWell(
-        onTap: () => _showIncomeActions(context, db, income),
+        onTap: _selectedIncomeIds.isNotEmpty
+            ? () => _toggleIncomeSelect(income.id)
+            : () => _showIncomeActions(context, db, income),
+        onLongPress: () => _toggleIncomeSelect(income.id),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
+              Checkbox(
+                value: selected,
+                onChanged: (_) => _toggleIncomeSelect(income.id),
+              ),
+              const SizedBox(width: 8),
               Container(
                 width: 48,
                 height: 48,
@@ -197,7 +320,9 @@ class IncomeScreen extends ConsumerWidget {
                       : isReceived
                           ? Icons.check
                           : Icons.schedule,
-                  color: isSkipped || !isReceived ? Colors.grey[600] : Colors.white,
+                  color: isSkipped || !isReceived
+                      ? Colors.grey[600]
+                      : Colors.white,
                 ),
               ),
               const SizedBox(width: 16),
@@ -209,7 +334,8 @@ class IncomeScreen extends ConsumerWidget {
                       income.titleSnapshot,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        decoration: isSkipped ? TextDecoration.lineThrough : null,
+                        decoration:
+                            isSkipped ? TextDecoration.lineThrough : null,
                         color: isSkipped ? Colors.grey : null,
                       ),
                     ),
@@ -229,7 +355,11 @@ class IncomeScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
-                  color: isSkipped ? Colors.grey : isReceived ? Colors.green : null,
+                  color: isSkipped
+                      ? Colors.grey
+                      : isReceived
+                          ? Colors.green
+                          : null,
                   decoration: isSkipped ? TextDecoration.lineThrough : null,
                 ),
               ),
@@ -240,7 +370,28 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSourceCard(BuildContext context, AppDatabase db, IncomeSource source) {
+  void _toggleIncomeSelect(int id) {
+    setState(() {
+      if (_selectedIncomeIds.contains(id)) {
+        _selectedIncomeIds.remove(id);
+      } else {
+        _selectedIncomeIds.add(id);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedIncomes(AppDatabase db) async {
+    final ids = List<int>.from(_selectedIncomeIds);
+    for (final id in ids) {
+      await db.deleteIncomeInstance(id);
+    }
+    setState(() {
+      _selectedIncomeIds.clear();
+    });
+  }
+
+  Widget _buildSourceCard(
+      BuildContext context, AppDatabase db, IncomeSource source) {
     String frequencyText;
     switch (source.frequency) {
       case 'monthly':
@@ -331,7 +482,8 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showIncomeActions(BuildContext context, AppDatabase db, IncomeInstance income) {
+  void _showIncomeActions(
+      BuildContext context, AppDatabase db, IncomeInstance income) {
     final isReceived = income.status == 'received';
     final isSkipped = income.status == 'skipped';
 
@@ -346,7 +498,8 @@ class IncomeScreen extends ConsumerWidget {
                 income.titleSnapshot,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              subtitle: Text('${income.date} • ${formatCents(income.amountCents)}'),
+              subtitle:
+                  Text('${income.date} • ${formatCents(income.amountCents)}'),
             ),
             const Divider(),
             if (!isReceived && !isSkipped)
@@ -399,7 +552,8 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showSourceActions(BuildContext context, AppDatabase db, IncomeSource source) {
+  void _showSourceActions(
+      BuildContext context, AppDatabase db, IncomeSource source) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -423,6 +577,37 @@ class IncomeScreen extends ConsumerWidget {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.clear_all, color: Colors.redAccent),
+              title: const Text('Delete all instances for this source'),
+              subtitle: const Text('Removes all generated income entries'),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete all income instances'),
+                    content: Text(
+                        'Delete every income instance created from "${source.name}"?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        style:
+                            FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete all'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await db.deleteIncomeInstancesForSource(source.id);
+                }
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Delete'),
               onTap: () async {
@@ -439,7 +624,8 @@ class IncomeScreen extends ConsumerWidget {
                       ),
                       FilledButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        style:
+                            FilledButton.styleFrom(backgroundColor: Colors.red),
                         child: const Text('Delete'),
                       ),
                     ],
@@ -456,8 +642,10 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditIncomeAmountDialog(BuildContext context, AppDatabase db, IncomeInstance income) {
-    final controller = TextEditingController(text: centsToInputString(income.amountCents));
+  void _showEditIncomeAmountDialog(
+      BuildContext context, AppDatabase db, IncomeInstance income) {
+    final controller =
+        TextEditingController(text: centsToInputString(income.amountCents));
 
     showDialog(
       context: context,
@@ -495,7 +683,8 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddIncomeDialog(BuildContext context, AppDatabase db) async {
+  Future<void> _showAddIncomeDialog(
+      BuildContext context, AppDatabase db) async {
     final isRecurring = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -527,7 +716,8 @@ class IncomeScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _showAddOneTimeIncomeDialog(BuildContext context, AppDatabase db) async {
+  Future<void> _showAddOneTimeIncomeDialog(
+      BuildContext context, AppDatabase db) async {
     final nameCtrl = TextEditingController(text: 'Paycheck');
     final amtCtrl = TextEditingController();
     DateTime chosen = DateTime.now();
@@ -551,7 +741,8 @@ class IncomeScreen extends ConsumerWidget {
                   labelText: 'Amount',
                   prefixText: '\$',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 12),
               Row(
@@ -598,7 +789,8 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showAddIncomeSourceDialog(BuildContext context, AppDatabase db) async {
+  Future<void> _showAddIncomeSourceDialog(
+      BuildContext context, AppDatabase db) async {
     final nameCtrl = TextEditingController();
     final amtCtrl = TextEditingController();
     String frequency = 'biweekly';
@@ -616,7 +808,8 @@ class IncomeScreen extends ConsumerWidget {
               children: [
                 TextField(
                   controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Name (e.g., Salary)'),
+                  decoration:
+                      const InputDecoration(labelText: 'Name (e.g., Salary)'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -625,7 +818,8 @@ class IncomeScreen extends ConsumerWidget {
                     labelText: 'Amount per payment',
                     prefixText: '\$',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -633,8 +827,11 @@ class IncomeScreen extends ConsumerWidget {
                   decoration: const InputDecoration(labelText: 'Frequency'),
                   items: const [
                     DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
-                    DropdownMenuItem(value: 'biweekly', child: Text('Biweekly')),
-                    DropdownMenuItem(value: 'semimonthly', child: Text('Semi-monthly (1st & 15th)')),
+                    DropdownMenuItem(
+                        value: 'biweekly', child: Text('Biweekly')),
+                    DropdownMenuItem(
+                        value: 'semimonthly',
+                        child: Text('Semi-monthly (1st & 15th)')),
                     DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
                     DropdownMenuItem(value: 'yearly', child: Text('Yearly')),
                   ],
@@ -662,7 +859,7 @@ class IncomeScreen extends ConsumerWidget {
                           if (p != null) setState(() => anchorDate = p);
                         },
                         child: const Text('Pick'),
-                    ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -730,10 +927,13 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showEditIncomeSourceDialog(BuildContext context, AppDatabase db, IncomeSource source) async {
+  Future<void> _showEditIncomeSourceDialog(
+      BuildContext context, AppDatabase db, IncomeSource source) async {
     final nameCtrl = TextEditingController(text: source.name);
-    final amtCtrl = TextEditingController(text: centsToInputString(source.amountCents));
-    DateTime startDate = source.startDate != null ? parseYmd(source.startDate!) : DateTime.now();
+    final amtCtrl =
+        TextEditingController(text: centsToInputString(source.amountCents));
+    DateTime startDate =
+        source.startDate != null ? parseYmd(source.startDate!) : DateTime.now();
 
     await showDialog(
       context: context,
@@ -754,7 +954,8 @@ class IncomeScreen extends ConsumerWidget {
                   labelText: 'Amount',
                   prefixText: '\$',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
               ),
               const SizedBox(height: 12),
               Row(

@@ -97,7 +97,7 @@ class SyncService {
 
       // Pre-pull to align IDs before pushing (fixes missing refs)
       final prePullUri = _resolve('/api/v1/sync/changes',
-          {'since': settings.lastSyncServerMs?.toString() ?? '0'});
+          {'since': settings.lastSyncServerMs.toString()});
       if (prePullUri == null) return const SyncResult(false, 'Invalid URL');
       final prePullResp = await http.get(prePullUri, headers: {
         'x-api-key': settings.apiKey ?? ''
@@ -147,6 +147,35 @@ class SyncService {
         }
       }
 
+      // If we have income instances, make sure the server has sources first.
+      if (upserts['income_instances'] != null &&
+          (upserts['income_instances'] as List).isNotEmpty &&
+          upserts['income_sources'] != null &&
+          (upserts['income_sources'] as List).isNotEmpty) {
+        final primeResp = await http
+            .post(
+              pushUri,
+              headers: {
+                'x-api-key': settings.apiKey ?? '',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'device_id': deviceId,
+                'client_now': DateTime.now().millisecondsSinceEpoch,
+                'upserts': {
+                  'income_sources': upserts['income_sources'],
+                },
+                'deletes': <String, dynamic>{},
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
+        _log('Prime push (income sources) status: ${primeResp.statusCode}');
+        if (primeResp.statusCode < 200 || primeResp.statusCode >= 300) {
+          return SyncResult(
+              false, 'Push failed ${primeResp.statusCode}: ${primeResp.body}');
+        }
+      }
+
       final pushResp = await http
           .post(
             pushUri,
@@ -170,7 +199,7 @@ class SyncService {
       await db.clearOutboxIds(outbox.map((e) => e.id).toList());
 
       final pullUri = _resolve('/api/v1/sync/changes', {
-        'since': settings.lastSyncServerMs?.toString() ?? '0',
+        'since': settings.lastSyncServerMs.toString(),
       });
       if (pullUri == null) return const SyncResult(false, 'Invalid URL');
 
@@ -346,10 +375,14 @@ class SyncService {
     final incomeInstancesRows = await (db.select(db.incomeInstances)
           ..where((i) => i.profileId.equals(db.profile)))
         .get();
-    final incomeInstancesPayload = incomeInstancesRows.map((i) {
+    final incomeInstancesPayload = <Map<String, dynamic>>[];
+    for (final i in incomeInstancesRows) {
       final sourceRemote =
           i.sourceRemoteId ?? incomeSourcesById[i.sourceId]?.remoteId;
-      return {
+      // If we don't have a source remote ID yet, fall back to a known seed name
+      // to avoid missing-ref 400s. The server will reject if null/unknown.
+      if (sourceRemote == null) continue;
+      incomeInstancesPayload.add({
         'id': i.remoteId ?? const Uuid().v4(),
         'source_id': sourceRemote,
         'title_snapshot': i.titleSnapshot,
@@ -361,8 +394,8 @@ class SyncService {
         'created_at': i.createdAt.toIso8601String(),
         'device_id': i.deviceId,
         'client_updated_at': DateTime.now().millisecondsSinceEpoch,
-      };
-    }).toList();
+      });
+    }
 
     return {
       'categories': catPayload,
@@ -388,6 +421,49 @@ class SyncService {
             .cast<Map<String, dynamic>>();
 
     await db.transaction(() async {
+      // Apply income sources before income instances so FK remap is possible.
+      for (final s in serverIncomeSources) {
+        final remoteId = s['id'] as String?;
+        if (remoteId == null) continue;
+        if (s['deleted_at_server'] != null) {
+          await (db.delete(db.incomeSources)
+                ..where((b) =>
+                    b.profileId.equals(db.profile) &
+                    b.remoteId.equals(remoteId)))
+              .go();
+          continue;
+        }
+        final existing = await (db.select(db.incomeSources)
+              ..where((b) =>
+                  b.profileId.equals(db.profile) & b.remoteId.equals(remoteId)))
+            .getSingleOrNull();
+        final companion = IncomeSourcesCompanion(
+          profileId: Value(db.profile),
+          remoteId: Value(remoteId),
+          householdId: Value(s['household_id'] as String?),
+          name: Value(s['name'] as String? ?? 'Income'),
+          amountCents: Value((s['amount_cents'] as num?)?.toInt() ?? 0),
+          frequency: Value(s['frequency'] as String? ?? 'monthly'),
+          startDate: Value(s['start_date'] as String?),
+          anchorDate: Value(s['anchor_date'] as String?),
+          active: Value(_asBool(s['active'], fallback: true)),
+          createdAt: Value(
+              _parseDate(s['created_at']) ?? DateTime.now()), // helper below
+          updatedAtServer:
+              Value((s['updated_at_server'] as num?)?.toInt() ?? 0),
+          deletedAtServer: Value((s['deleted_at_server'] as num?)?.toInt()),
+          deviceId: Value(s['device_id'] as String?),
+          clientUpdatedAt: Value((s['client_updated_at'] as num?)?.toInt()),
+        );
+        if (existing == null) {
+          await db.into(db.incomeSources).insert(companion);
+        } else {
+          await (db.update(db.incomeSources)
+                ..where((b) => b.remoteId.equals(remoteId)))
+              .write(companion);
+        }
+      }
+
       for (final c in serverCategories) {
         final remoteId = c['id'] as String?;
         if (remoteId == null) continue;

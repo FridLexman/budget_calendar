@@ -862,6 +862,26 @@ class AppDatabase extends _$AppDatabase {
         .go();
   }
 
+  Future<void> deleteInstancesForTemplate(int templateId) async {
+    final rows = await (select(billInstances)
+          ..where((i) =>
+              i.profileId.equals(profile) & i.templateId.equals(templateId)))
+        .get();
+    for (final row in rows) {
+      if (row.remoteId != null) {
+        await enqueueOutbox(
+          entityType: 'bill_instances',
+          entityId: row.remoteId!,
+          op: 'delete',
+        );
+      }
+    }
+    await (delete(billInstances)
+          ..where((i) =>
+              i.profileId.equals(profile) & i.templateId.equals(templateId)))
+        .go();
+  }
+
   // ------------ Income Source operations ------------
 
   Future<List<IncomeSource>> getAllIncomeSources() {
@@ -1112,6 +1132,26 @@ class AppDatabase extends _$AppDatabase {
     }
     await (delete(incomeInstances)
           ..where((s) => s.profileId.equals(profile) & s.id.equals(id)))
+        .go();
+  }
+
+  Future<void> deleteIncomeInstancesForSource(int sourceId) async {
+    final rows = await (select(incomeInstances)
+          ..where(
+              (i) => i.profileId.equals(profile) & i.sourceId.equals(sourceId)))
+        .get();
+    for (final row in rows) {
+      if (row.remoteId != null) {
+        await enqueueOutbox(
+          entityType: 'income_instances',
+          entityId: row.remoteId!,
+          op: 'delete',
+        );
+      }
+    }
+    await (delete(incomeInstances)
+          ..where(
+              (i) => i.profileId.equals(profile) & i.sourceId.equals(sourceId)))
         .go();
   }
 

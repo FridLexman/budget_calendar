@@ -7,11 +7,20 @@ import '../features/month_generator.dart';
 import '../utils/money.dart';
 import '../utils/date_utils.dart';
 
-class BillsScreen extends ConsumerWidget {
+class BillsScreen extends ConsumerStatefulWidget {
   const BillsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BillsScreen> createState() => _BillsScreenState();
+}
+
+class _BillsScreenState extends ConsumerState<BillsScreen> {
+  String _statusFilter = 'all';
+  bool _allMonths = false;
+  final Set<int> _selectedInstances = {};
+
+  @override
+  Widget build(BuildContext context) {
     final dbAsync = ref.watch(appDatabaseProvider);
 
     return dbAsync.when(
@@ -102,9 +111,6 @@ class BillsScreen extends ConsumerWidget {
                 _buildInstancesSection(
                   context: context,
                   db: db,
-                  startDate: ymd(DateTime.now().copyWith(day: 1)),
-                  endDate: ymd(DateTime(
-                      DateTime.now().year, DateTime.now().month + 1, 0)),
                 ),
               ],
             );
@@ -225,54 +231,122 @@ class BillsScreen extends ConsumerWidget {
   Widget _buildInstancesSection({
     required BuildContext context,
     required AppDatabase db,
-    required String startDate,
-    required String endDate,
   }) {
+    final now = DateTime.now();
+    final startDate = ymd(DateTime(now.year, now.month, 1));
+    final endDate = ymd(DateTime(now.year, now.month + 1, 0));
+    final stream = _allMonths
+        ? db.watchAllBillInstances()
+        : db.watchBillInstancesForMonth(startDate, endDate);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            'This month' 's instances',
+            'Bill instances',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: 220,
+              child: DropdownButtonFormField<String>(
+                value: _statusFilter,
+                decoration: const InputDecoration(labelText: 'Status filter'),
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('All')),
+                  DropdownMenuItem(
+                      value: 'scheduled', child: Text('Scheduled')),
+                  DropdownMenuItem(value: 'paid', child: Text('Paid')),
+                  DropdownMenuItem(value: 'partial', child: Text('Partial')),
+                  DropdownMenuItem(value: 'skipped', child: Text('Skipped')),
+                ],
+                onChanged: (v) {
+                  if (v == null) return;
+                  setState(() {
+                    _statusFilter = v;
+                    _selectedInstances.clear();
+                  });
+                },
+              ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('All months'),
+                Switch(
+                  value: _allMonths,
+                  onChanged: (v) {
+                    setState(() {
+                      _allMonths = v;
+                      _selectedInstances.clear();
+                    });
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+        if (_selectedInstances.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  onPressed: () => _deleteSelected(db),
+                  icon: const Icon(Icons.delete),
+                  label: Text('Delete selected (${_selectedInstances.length})'),
+                ),
+                const SizedBox(width: 12),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedInstances.clear();
+                    });
+                  },
+                  child: const Text('Clear selection'),
+                ),
+              ],
+            ),
+          ),
         StreamBuilder<List<BillInstance>>(
-          stream: db.watchBillInstancesForMonth(startDate, endDate),
+          stream: stream,
           builder: (context, snap) {
             final rows = snap.data ?? const <BillInstance>[];
-            if (rows.isEmpty) {
-              return const Text(
-                  'No bill instances found in the local database.');
+            final filtered = rows.where((b) {
+              if (_statusFilter == 'all') return true;
+              return b.status == _statusFilter;
+            }).toList();
+
+            if (filtered.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('No bill instances found in the local database.'),
+              );
             }
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: rows.length,
+              itemCount: filtered.length,
               itemBuilder: (context, idx) {
-                final b = rows[idx];
+                final b = filtered[idx];
                 final isPaid = b.status == 'paid';
-                final isPartial = b.status == 'partial';
-                final isSkipped = b.status == 'skipped';
+                final isSelected = _selectedInstances.contains(b.id);
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 4),
                   child: ListTile(
-                    leading: Icon(
-                      isPaid
-                          ? Icons.check_circle
-                          : isPartial
-                              ? Icons.adjust
-                              : isSkipped
-                                  ? Icons.remove_circle
-                                  : Icons.schedule,
-                      color: isPaid
-                          ? Colors.green
-                          : isPartial
-                              ? Colors.orange
-                              : isSkipped
-                                  ? Colors.grey
-                                  : Colors.grey[600],
+                    leading: Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => _toggleSelect(b.id),
                     ),
                     title: Text(b.titleSnapshot),
                     subtitle:
@@ -308,7 +382,10 @@ class BillsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    onTap: () => _showInstanceActions(context, db, b),
+                    onTap: _selectedInstances.isNotEmpty
+                        ? () => _toggleSelect(b.id)
+                        : () => _showInstanceActions(context, db, b),
+                    onLongPress: () => _toggleSelect(b.id),
                   ),
                 );
               },
@@ -317,6 +394,27 @@ class BillsScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  void _toggleSelect(int id) {
+    setState(() {
+      if (_selectedInstances.contains(id)) {
+        _selectedInstances.remove(id);
+      } else {
+        _selectedInstances.add(id);
+      }
+    });
+  }
+
+  Future<void> _deleteSelected(AppDatabase db) async {
+    if (_selectedInstances.isEmpty) return;
+    final ids = List<int>.from(_selectedInstances);
+    for (final id in ids) {
+      await db.deleteBillInstance(id);
+    }
+    setState(() {
+      _selectedInstances.clear();
+    });
   }
 
   void _showTemplateActions(
@@ -358,6 +456,38 @@ class BillsScreen extends ConsumerWidget {
                 Navigator.pop(context);
                 await db.toggleBillTemplateActive(
                     template.id, !template.active);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.clear_all, color: Colors.redAccent),
+              title: const Text('Delete all instances for this template'),
+              subtitle: const Text(
+                  'Removes all instances generated by this template'),
+              onTap: () async {
+                Navigator.pop(context);
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Delete all instances'),
+                    content: Text(
+                        'Delete every bill instance created from "${template.name}"?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        style:
+                            FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Delete all'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await db.deleteInstancesForTemplate(template.id);
+                }
               },
             ),
             ListTile(
